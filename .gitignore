@@ -5,3 +5,5 @@ __pycache__/
 uploads/
 outputs/
 test_input/
+.DS_Store
+usage.json

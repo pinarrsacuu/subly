@@ -15,6 +15,8 @@ from transcribe import extract_audio, transcribe, write_srt
 from burn_captions import burn
 from translate import translate_segments, LANGUAGES
 from ui_strings import get_ui_language, get_ui_strings, RTL_LANGS
+from video_utils import get_duration_seconds
+from usage_tracker import get_remaining, record_usage, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
 
 app = Flask(__name__)
 
@@ -163,6 +165,8 @@ UPLOAD_FORM = f"""
           <option value="{{{{ value }}}}">{{{{ label }}}}</option>
         {{% endfor %}}
       </select>
+      <label for="email">{{{{ t.label_email }}}}</label>
+      <input type="email" id="email" name="email" required>
       <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
     </form>
   </div>
@@ -197,6 +201,28 @@ RESULT_PAGE = f"""
 </html>
 """
 
+ERROR_PAGE = f"""
+<!doctype html>
+<html lang="{{{{ lang }}}}" dir="{{{{ dir }}}}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subly</title>
+  {BRAND_HEAD}
+</head>
+<body>
+<div class="wrap">
+  {NAV}
+  <div class="card">
+    <h1 class="headline">{{{{ error_title }}}}</h1>
+    <p class="lede">{{{{ error_body }}}}</p>
+    <a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a>
+  </div>
+  <footer class="siteFoot">{{{{ t.footer }}}}</footer>
+</div>
+</body>
+</html>
+"""
+
 
 @app.route("/")
 def index():
@@ -214,10 +240,30 @@ def process():
 
     uploaded = request.files["video"]
     target_language = request.form.get("language", "original")
+    email = request.form.get("email", "").strip()
     job_id = uuid.uuid4().hex[:8]
+
+    # Ucretsiz plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
+    # bakiyoruz ki API maliyetine hic girmeyelim.
+    if get_remaining(email) <= 0:
+        return render_template_string(
+            ERROR_PAGE, t=t, lang=lang, dir=direction,
+            error_title=t["error_limit_title"],
+            error_body=t["error_limit_body"].format(limit=FREE_MONTHLY_LIMIT),
+        )
 
     video_path = UPLOAD_DIR / f"{job_id}_{uploaded.filename}"
     uploaded.save(video_path)
+
+    # Ucretsiz plan kontrolu 2: video suresi sinirin altinda mi?
+    duration = get_duration_seconds(video_path)
+    if duration > FREE_MAX_DURATION_SECONDS:
+        video_path.unlink()
+        return render_template_string(
+            ERROR_PAGE, t=t, lang=lang, dir=direction,
+            error_title=t["error_duration_title"],
+            error_body=t["error_duration_body"].format(max_min=FREE_MAX_DURATION_SECONDS / 60),
+        )
 
     audio_path = extract_audio(video_path)
     segments = transcribe(audio_path)
@@ -230,6 +276,8 @@ def process():
     output_filename = f"{job_id}_captioned.mp4"
     output_path = OUTPUT_DIR / output_filename
     burn(video_path, srt_path, output_path)
+
+    record_usage(email)
 
     return render_template_string(RESULT_PAGE, filename=output_filename, t=t, lang=lang, dir=direction)
 
