@@ -16,9 +16,10 @@ from burn_captions import burn
 from translate import translate_segments, LANGUAGES
 from ui_strings import get_ui_language, get_ui_strings, get_client_ip, RTL_LANGS
 from video_utils import get_duration_seconds
-from usage_tracker import get_remaining, record_usage, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
+from usage_tracker import get_remaining, record_usage, init_db, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
 
 app = Flask(__name__)
+init_db()
 
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
