@@ -103,6 +103,56 @@ BRAND_HEAD = """
   video { width: 100%; border-radius: 12px; border: 1px solid var(--border); display: block; margin: 22px 0; }
   .btnGhost { color: var(--ink); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px; }
 
+  .freeNote {
+    display: inline-block; font-size: 0.82rem; color: var(--ink-soft);
+    background: var(--teal-soft); border-radius: 10px; padding: 8px 12px; margin-top: 16px;
+  }
+
+  .demoWrap { display: flex; flex-direction: column; align-items: center; margin: 44px 0; }
+  .demoFrame {
+    width: 200px; aspect-ratio: 9 / 16; border-radius: 22px; position: relative; overflow: hidden;
+    background: linear-gradient(160deg, var(--ink) 0%, var(--teal) 140%);
+    border: 1px solid var(--border); box-shadow: 0 24px 54px -30px rgba(0,0,0,0.4);
+  }
+  .demoCaption {
+    position: absolute; left: 12px; right: 12px; bottom: 22px;
+    background: rgba(0,0,0,0.55); color: #fff; font-weight: 700; font-size: 0.82rem; line-height: 1.35;
+    padding: 9px 10px; border-radius: 10px; text-align: center; border: 2px solid var(--coral);
+  }
+  .demoLabel { margin-top: 14px; font-size: 0.78rem; color: var(--ink-soft); }
+
+  .sectionTitle {
+    font-family: Georgia, serif; font-size: 1.25rem; text-align: center; margin: 0 0 22px;
+  }
+  .steps { margin: 48px 0; }
+  .stepGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px 16px; text-align: center;
+  }
+  .stepNum {
+    display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+    border-radius: 50%; background: var(--coral-soft); color: var(--coral); font-weight: 700;
+    font-size: 0.82rem; margin-bottom: 10px;
+  }
+  .step h3 { font-size: 0.94rem; margin: 4px 0 6px; }
+  .step p { font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
+
+  .faq { margin: 48px 0 8px; }
+  .faq details {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .faq summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; float: right; color: var(--teal); font-weight: 700; }
+  .faq details[open] summary::after { content: "\\2212"; }
+  .faq p { margin: 10px 0 0; color: var(--ink-soft); font-size: 0.88rem; line-height: 1.55; }
+
+  @media (max-width: 560px) {
+    .stepGrid { grid-template-columns: 1fr; }
+  }
+
   footer.siteFoot { padding: 30px 0 48px; font-size: 0.8rem; color: var(--ink-soft); text-align: center; }
   footer.siteFoot a { color: inherit; }
 </style>
@@ -157,6 +207,38 @@ UPLOAD_FORM = f"""
     <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
     <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
     <p class="lede">{{{{ t.lede }}}}</p>
+    <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
+  </div>
+
+  <div class="demoWrap">
+    <div class="demoFrame">
+      <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
+    </div>
+    <p class="demoLabel">{{{{ t.demo_label }}}}</p>
+  </div>
+
+  <div class="steps">
+    <h2 class="sectionTitle">{{{{ t.how_it_works_title }}}}</h2>
+    <div class="stepGrid">
+      <div class="step">
+        <span class="stepNum">1</span>
+        <h3>{{{{ t.step1_title }}}}</h3>
+        <p>{{{{ t.step1_desc }}}}</p>
+      </div>
+      <div class="step">
+        <span class="stepNum">2</span>
+        <h3>{{{{ t.step2_title }}}}</h3>
+        <p>{{{{ t.step2_desc }}}}</p>
+      </div>
+      <div class="step">
+        <span class="stepNum">3</span>
+        <h3>{{{{ t.step3_title }}}}</h3>
+        <p>{{{{ t.step3_desc }}}}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
     <form action="/process" method="post" enctype="multipart/form-data">
       <label for="video">{{{{ t.label_video }}}}</label>
       <input type="file" id="video" name="video" accept="video/*" required>
@@ -171,6 +253,27 @@ UPLOAD_FORM = f"""
       <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
     </form>
   </div>
+
+  <div class="faq">
+    <h2 class="sectionTitle">{{{{ t.faq_title }}}}</h2>
+    <details>
+      <summary>{{{{ t.faq_q1 }}}}</summary>
+      <p>{{{{ t.faq_a1 }}}}</p>
+    </details>
+    <details>
+      <summary>{{{{ t.faq_q2 }}}}</summary>
+      <p>{{{{ t.faq_a2 }}}}</p>
+    </details>
+    <details>
+      <summary>{{{{ t.faq_q3 }}}}</summary>
+      <p>{{{{ t.faq_a3|safe }}}}</p>
+    </details>
+    <details>
+      <summary>{{{{ t.faq_q4 }}}}</summary>
+      <p>{{{{ t.faq_a4 }}}}</p>
+    </details>
+  </div>
+
   <footer class="siteFoot">{{{{ t.footer }}}}</footer>
 </div>
 </body>
