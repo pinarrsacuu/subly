@@ -79,7 +79,7 @@ BRAND_HEAD = """
   p.lede { color: var(--ink-soft); line-height: 1.55; margin: 0 0 30px; font-size: 1rem; }
 
   label { display: block; font-size: 0.82rem; color: var(--ink-soft); margin: 18px 0 8px; }
-  input[type=file], select {
+  input[type=file], input[type=email], select {
     width: 100%; font: inherit; font-size: 0.95rem; color: var(--ink);
     background: var(--paper); border: 1px solid var(--border); border-radius: 10px;
     padding: 12px 14px; outline: none;
