@@ -1,11 +1,58 @@
 """
 Site arayuzunun (buton, baslik, etiket metinleri) cok dilli metinleri.
 Altyazi diliyle (translate.py) karistirilmasin - bu, sitenin kendi dilidir,
-ziyaretcinin taraycisi hangi dildeyse ona gore otomatik secilir.
+ziyaretcinin bulundugu ulkeye (IP) gore, bulunamazsa tarayici diline gore secilir.
 """
+
+import json
+import urllib.request
+from typing import Optional
 
 SUPPORTED_UI_LANGS = ["en", "es", "pt", "fr", "de", "it", "tr", "ar", "hi", "zh", "ja", "ko", "ru", "id"]
 RTL_LANGS = {"ar"}
+
+# ISO 3166-1 alpha-2 ulke kodu -> arayuz dili
+COUNTRY_TO_LANG = {
+    "US": "en", "GB": "en", "CA": "en", "AU": "en", "NZ": "en", "IE": "en", "ZA": "en",
+    "ES": "es", "MX": "es", "AR": "es", "CO": "es", "CL": "es", "PE": "es", "VE": "es",
+    "EC": "es", "GT": "es", "CU": "es", "BO": "es", "DO": "es", "HN": "es", "PY": "es",
+    "SV": "es", "NI": "es", "CR": "es", "PA": "es", "UY": "es", "PR": "es",
+    "PT": "pt", "BR": "pt",
+    "FR": "fr", "BE": "fr", "LU": "fr", "MC": "fr",
+    "DE": "de", "AT": "de", "CH": "de",
+    "IT": "it", "SM": "it", "VA": "it",
+    "TR": "tr",
+    "SA": "ar", "AE": "ar", "EG": "ar", "IQ": "ar", "JO": "ar", "KW": "ar", "QA": "ar",
+    "BH": "ar", "OM": "ar", "YE": "ar", "SY": "ar", "LB": "ar", "LY": "ar", "TN": "ar",
+    "DZ": "ar", "MA": "ar", "SD": "ar",
+    "IN": "hi",
+    "CN": "zh", "HK": "zh", "TW": "zh", "MO": "zh",
+    "JP": "ja",
+    "KR": "ko", "KP": "ko",
+    "RU": "ru", "BY": "ru", "KZ": "ru",
+    "ID": "id",
+}
+
+
+def get_client_ip(request) -> str:
+    forwarded = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.remote_addr or ""
+
+
+def get_country_lang(ip: str) -> Optional[str]:
+    if not ip or ip.startswith(("127.", "10.", "192.168.", "::1")):
+        return None
+    try:
+        url = f"http://ip-api.com/json/{ip}?fields=status,countryCode"
+        with urllib.request.urlopen(url, timeout=1.5) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        if data.get("status") == "success":
+            return COUNTRY_TO_LANG.get(data.get("countryCode"))
+    except Exception:
+        return None
+    return None
 
 UI_STRINGS = {
     "en": {
@@ -263,7 +310,10 @@ UI_STRINGS = {
 }
 
 
-def get_ui_language(accept_languages) -> str:
+def get_ui_language(accept_languages, ip: str = "") -> str:
+    country_lang = get_country_lang(ip)
+    if country_lang:
+        return country_lang
     match = accept_languages.best_match(SUPPORTED_UI_LANGS)
     return match or "en"
 

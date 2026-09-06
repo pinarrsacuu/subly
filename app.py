@@ -14,7 +14,7 @@ from flask import Flask, request, render_template_string, send_from_directory
 from transcribe import extract_audio, transcribe, write_srt
 from burn_captions import burn
 from translate import translate_segments, LANGUAGES
-from ui_strings import get_ui_language, get_ui_strings, RTL_LANGS
+from ui_strings import get_ui_language, get_ui_strings, get_client_ip, RTL_LANGS
 from video_utils import get_duration_seconds
 from usage_tracker import get_remaining, record_usage, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
 
@@ -226,7 +226,7 @@ ERROR_PAGE = f"""
 
 @app.route("/")
 def index():
-    lang = get_ui_language(request.accept_languages)
+    lang = get_ui_language(request.accept_languages, get_client_ip(request))
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
     return render_template_string(UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction)
@@ -234,7 +234,7 @@ def index():
 
 @app.route("/process", methods=["POST"])
 def process():
-    lang = get_ui_language(request.accept_languages)
+    lang = get_ui_language(request.accept_languages, get_client_ip(request))
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
 
