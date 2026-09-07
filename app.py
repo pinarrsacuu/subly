@@ -60,20 +60,30 @@ BRAND_HEAD = """
   .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; }
   .wrap { max-width: 640px; margin: 0 auto; padding: 0 24px; }
   .heroOuter { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
-  .heroRow { display: block; }
-  .heroCard { margin-bottom: 0; }
+  .splitRow { display: block; }
   @media (min-width: 860px) {
-    .heroRow { display: flex; align-items: center; gap: 56px; padding: 24px 0 40px; }
-    .heroRow .heroCard { flex: 1 1 54%; }
-    .heroRow .demoWrap { flex: 1 1 46%; margin: 0; }
+    .splitRow { display: flex; align-items: center; gap: 56px; }
+    .splitRow > .half { flex: 1 1 50%; min-width: 0; }
   }
+  .heroBanner { padding: 40px; }
+  .heroBanner .demoWrap { margin: 40px 0 0; }
+  @media (min-width: 860px) {
+    .heroBanner { padding: 48px; }
+    .heroBanner .demoWrap { margin: 0; }
+  }
+  .contentSection { margin-top: 48px; }
+  .contentRow { margin: 8px 0 0; }
+  .contentRow .stepsPanel { padding: 6px 0; }
+  .contentRow .stepGrid { grid-template-columns: 1fr; gap: 26px; }
+  .contentRow .step { text-align: left; }
+  .contentRow .sectionTitle { text-align: left; }
 
   nav.top { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand .mark { width: 28px; height: 28px; flex: none; display: block; }
+  .brand .mark { width: 40px; height: 40px; flex: none; display: block; }
   .brand .names { display: flex; flex-direction: column; line-height: 1.15; }
-  .brand .product { font-family: Georgia, serif; font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
-  .brand .by { font-size: 0.72rem; color: var(--ink-soft); }
+  .brand .product { font-family: Georgia, serif; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.01em; }
+  .brand .by { font-size: 0.82rem; color: var(--ink-soft); }
 
   .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
@@ -159,7 +169,6 @@ BRAND_HEAD = """
   .sectionTitle {
     font-family: Georgia, serif; font-size: 1.25rem; text-align: center; margin: 0 0 22px;
   }
-  .steps { margin: 60px 0; }
   .stepGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
   .step { text-align: center; padding: 0 6px; }
   .stepNum {
@@ -235,65 +244,71 @@ UPLOAD_FORM = f"""
 <body>
 <div class="heroOuter">
   {NAV}
-  <div class="heroRow">
-    <div class="card heroCard">
-      <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
-      <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
-      <p class="lede">{{{{ t.lede }}}}</p>
-      <a href="#uploadForm" class="btnHero">{{{{ t.cta_scroll }}}}</a>
-      <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
+  <div class="card heroBanner">
+    <div class="splitRow">
+      <div class="half">
+        <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
+        <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
+        <p class="lede">{{{{ t.lede }}}}</p>
+        <a href="#uploadForm" class="btnHero">{{{{ t.cta_scroll }}}}</a>
+        <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
+      </div>
+
+      <div class="half demoWrap">
+        <div class="demoFrame">
+          <span class="demoTime">0:07</span>
+          <span class="demoPlay"></span>
+          <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
+        </div>
+        <p class="demoLabel">{{{{ t.demo_label }}}}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="heroOuter contentSection">
+  <div class="splitRow contentRow">
+    <div class="half card" id="uploadForm">
+      <form action="/process" method="post" enctype="multipart/form-data">
+        <label for="video">{{{{ t.label_video }}}}</label>
+        <input type="file" id="video" name="video" accept="video/*" required>
+        <label for="language">{{{{ t.label_language }}}}</label>
+        <select name="language" id="language">
+          {{% for value, label in languages %}}
+            <option value="{{{{ value }}}}">{{{{ label }}}}</option>
+          {{% endfor %}}
+        </select>
+        <label for="email">{{{{ t.label_email }}}}</label>
+        <input type="email" id="email" name="email" required>
+        <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
+        <p class="formNote">{{{{ t.free_note|safe }}}}</p>
+      </form>
     </div>
 
-    <div class="demoWrap">
-      <div class="demoFrame">
-        <span class="demoTime">0:07</span>
-        <span class="demoPlay"></span>
-        <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
+    <div class="half stepsPanel">
+      <h2 class="sectionTitle">{{{{ t.how_it_works_title }}}}</h2>
+      <div class="stepGrid">
+        <div class="step">
+          <span class="stepNum">1</span>
+          <h3>{{{{ t.step1_title }}}}</h3>
+          <p>{{{{ t.step1_desc }}}}</p>
+        </div>
+        <div class="step">
+          <span class="stepNum">2</span>
+          <h3>{{{{ t.step2_title }}}}</h3>
+          <p>{{{{ t.step2_desc }}}}</p>
+        </div>
+        <div class="step">
+          <span class="stepNum">3</span>
+          <h3>{{{{ t.step3_title }}}}</h3>
+          <p>{{{{ t.step3_desc }}}}</p>
+        </div>
       </div>
-      <p class="demoLabel">{{{{ t.demo_label }}}}</p>
     </div>
   </div>
 </div>
 
 <div class="wrap">
-  <div class="steps">
-    <h2 class="sectionTitle">{{{{ t.how_it_works_title }}}}</h2>
-    <div class="stepGrid">
-      <div class="step">
-        <span class="stepNum">1</span>
-        <h3>{{{{ t.step1_title }}}}</h3>
-        <p>{{{{ t.step1_desc }}}}</p>
-      </div>
-      <div class="step">
-        <span class="stepNum">2</span>
-        <h3>{{{{ t.step2_title }}}}</h3>
-        <p>{{{{ t.step2_desc }}}}</p>
-      </div>
-      <div class="step">
-        <span class="stepNum">3</span>
-        <h3>{{{{ t.step3_title }}}}</h3>
-        <p>{{{{ t.step3_desc }}}}</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="card" id="uploadForm">
-    <form action="/process" method="post" enctype="multipart/form-data">
-      <label for="video">{{{{ t.label_video }}}}</label>
-      <input type="file" id="video" name="video" accept="video/*" required>
-      <label for="language">{{{{ t.label_language }}}}</label>
-      <select name="language" id="language">
-        {{% for value, label in languages %}}
-          <option value="{{{{ value }}}}">{{{{ label }}}}</option>
-        {{% endfor %}}
-      </select>
-      <label for="email">{{{{ t.label_email }}}}</label>
-      <input type="email" id="email" name="email" required>
-      <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
-      <p class="formNote">{{{{ t.free_note|safe }}}}</p>
-    </form>
-  </div>
-
   <div class="faq">
     <h2 class="sectionTitle">{{{{ t.faq_title }}}}</h2>
     <details>
