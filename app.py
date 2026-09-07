@@ -59,6 +59,14 @@ BRAND_HEAD = """
   h1, h2 { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
   .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; }
   .wrap { max-width: 640px; margin: 0 auto; padding: 0 24px; }
+  .heroOuter { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .heroRow { display: block; }
+  .heroCard { margin-bottom: 0; }
+  @media (min-width: 860px) {
+    .heroRow { display: flex; align-items: center; gap: 56px; padding: 24px 0 40px; }
+    .heroRow .heroCard { flex: 1 1 54%; }
+    .heroRow .demoWrap { flex: 1 1 46%; margin: 0; }
+  }
 
   nav.top { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; }
   .brand { display: flex; align-items: center; gap: 10px; }
@@ -225,25 +233,29 @@ UPLOAD_FORM = f"""
   {BRAND_HEAD}
 </head>
 <body>
-<div class="wrap">
+<div class="heroOuter">
   {NAV}
-  <div class="card">
-    <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
-    <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
-    <p class="lede">{{{{ t.lede }}}}</p>
-    <a href="#uploadForm" class="btnHero">{{{{ t.cta_scroll }}}}</a>
-    <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
-  </div>
-
-  <div class="demoWrap">
-    <div class="demoFrame">
-      <span class="demoTime">0:07</span>
-      <span class="demoPlay"></span>
-      <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
+  <div class="heroRow">
+    <div class="card heroCard">
+      <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
+      <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
+      <p class="lede">{{{{ t.lede }}}}</p>
+      <a href="#uploadForm" class="btnHero">{{{{ t.cta_scroll }}}}</a>
+      <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
     </div>
-    <p class="demoLabel">{{{{ t.demo_label }}}}</p>
-  </div>
 
+    <div class="demoWrap">
+      <div class="demoFrame">
+        <span class="demoTime">0:07</span>
+        <span class="demoPlay"></span>
+        <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
+      </div>
+      <p class="demoLabel">{{{{ t.demo_label }}}}</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
   <div class="steps">
     <h2 class="sectionTitle">{{{{ t.how_it_works_title }}}}</h2>
     <div class="stepGrid">
