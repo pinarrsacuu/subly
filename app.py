@@ -68,8 +68,8 @@ BRAND_HEAD = """
   .brand .by { font-size: 0.72rem; color: var(--ink-soft); }
 
   .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
-    padding: 34px; box-shadow: 0 24px 54px -34px rgba(0,0,0,0.35);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+    padding: 36px 32px; box-shadow: 0 32px 64px -36px rgba(0,0,0,0.32);
   }
   .eyebrow {
     font-family: ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.1em;
@@ -78,7 +78,7 @@ BRAND_HEAD = """
   @media (max-width: 420px) {
     .eyebrow { font-size: 0.62rem; letter-spacing: 0.06em; }
   }
-  h1.headline { font-size: clamp(1.7rem, 4.5vw, 2.3rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 12px; }
+  h1.headline { font-size: clamp(1.9rem, 5.5vw, 2.7rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 14px; }
   h1.headline em { font-style: italic; color: var(--coral); }
   p.lede { color: var(--ink-soft); line-height: 1.55; margin: 0 0 30px; font-size: 1rem; }
 
@@ -99,11 +99,11 @@ BRAND_HEAD = """
 
   .btnHero {
     display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
-    background: var(--coral); color: #fff; border: none; cursor: pointer;
-    padding: 12px 24px; border-radius: 999px; font: inherit; font-size: 0.92rem; font-weight: 600;
-    text-decoration: none; transition: transform 0.15s ease;
+    background: transparent; color: var(--coral); border: 1.5px solid var(--coral); cursor: pointer;
+    padding: 11px 24px; border-radius: 999px; font: inherit; font-size: 0.92rem; font-weight: 600;
+    text-decoration: none; transition: transform 0.15s ease, background 0.15s ease;
   }
-  .btnHero:hover { transform: translateY(-2px); }
+  .btnHero:hover { transform: translateY(-2px); background: var(--coral-soft); }
 
   .badge {
     display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, monospace;
@@ -122,11 +122,11 @@ BRAND_HEAD = """
     font-size: 0.78rem; color: var(--ink-soft); margin: 10px 0 0; text-align: center;
   }
 
-  .demoWrap { display: flex; flex-direction: column; align-items: center; margin: 44px 0; }
+  .demoWrap { display: flex; flex-direction: column; align-items: center; margin: 56px 0; }
   .demoFrame {
-    width: 200px; aspect-ratio: 9 / 16; border-radius: 22px; position: relative; overflow: hidden;
+    width: 210px; aspect-ratio: 9 / 16; border-radius: 28px; position: relative; overflow: hidden;
     background: linear-gradient(160deg, var(--ink) 0%, var(--teal) 140%);
-    border: 1px solid var(--border); box-shadow: 0 24px 54px -30px rgba(0,0,0,0.4);
+    border: 1px solid var(--border); box-shadow: 0 40px 70px -32px rgba(0,0,0,0.42);
   }
   .demoCaption {
     position: absolute; left: 12px; right: 12px; bottom: 22px;
@@ -151,7 +151,7 @@ BRAND_HEAD = """
   .sectionTitle {
     font-family: Georgia, serif; font-size: 1.25rem; text-align: center; margin: 0 0 22px;
   }
-  .steps { margin: 52px 0; }
+  .steps { margin: 60px 0; }
   .stepGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
   .step { text-align: center; padding: 0 6px; }
   .stepNum {
@@ -162,7 +162,7 @@ BRAND_HEAD = """
   .step h3 { font-size: 0.94rem; margin: 4px 0 6px; }
   .step p { font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
 
-  .faq { margin: 48px 0 8px; }
+  .faq { margin: 56px 0 8px; }
   .faq details {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 14px 18px; margin-bottom: 10px;
