@@ -72,8 +72,11 @@ BRAND_HEAD = """
     padding: 34px; box-shadow: 0 24px 54px -34px rgba(0,0,0,0.35);
   }
   .eyebrow {
-    font-family: ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.12em;
+    font-family: ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--teal); margin: 0 0 14px; font-weight: 600;
+  }
+  @media (max-width: 420px) {
+    .eyebrow { font-size: 0.62rem; letter-spacing: 0.06em; }
   }
   h1.headline { font-size: clamp(1.7rem, 4.5vw, 2.3rem); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 12px; }
   h1.headline em { font-style: italic; color: var(--coral); }
@@ -94,6 +97,14 @@ BRAND_HEAD = """
   }
   .btnPrimary:hover { transform: translateY(-2px); }
 
+  .btnHero {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+    background: var(--coral); color: #fff; border: none; cursor: pointer;
+    padding: 12px 24px; border-radius: 999px; font: inherit; font-size: 0.92rem; font-weight: 600;
+    text-decoration: none; transition: transform 0.15s ease;
+  }
+  .btnHero:hover { transform: translateY(-2px); }
+
   .badge {
     display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, monospace;
     font-size: 0.72rem; letter-spacing: 0.06em; background: var(--teal-soft); color: var(--teal);
@@ -104,8 +115,11 @@ BRAND_HEAD = """
   .btnGhost { color: var(--ink); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px; }
 
   .freeNote {
-    display: inline-block; font-size: 0.82rem; color: var(--ink-soft);
-    background: var(--teal-soft); border-radius: 10px; padding: 8px 12px; margin-top: 16px;
+    display: inline-block; font-size: 0.8rem; color: var(--ink-soft);
+    background: var(--teal-soft); border-radius: 10px; padding: 7px 12px; margin-top: 14px;
+  }
+  .formNote {
+    font-size: 0.78rem; color: var(--ink-soft); margin: 10px 0 0; text-align: center;
   }
 
   .demoWrap { display: flex; flex-direction: column; align-items: center; margin: 44px 0; }
@@ -119,21 +133,31 @@ BRAND_HEAD = """
     background: rgba(0,0,0,0.55); color: #fff; font-weight: 700; font-size: 0.82rem; line-height: 1.35;
     padding: 9px 10px; border-radius: 10px; text-align: center; border: 2px solid var(--coral);
   }
+  .demoTime {
+    position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.4); color: #fff;
+    font-family: ui-monospace, monospace; font-size: 0.68rem; padding: 3px 8px; border-radius: 999px;
+  }
+  .demoPlay {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -62%);
+    width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.22);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .demoPlay::after {
+    content: ""; border-style: solid; border-width: 8px 0 8px 13px;
+    border-color: transparent transparent transparent #fff; margin-left: 3px;
+  }
   .demoLabel { margin-top: 14px; font-size: 0.78rem; color: var(--ink-soft); }
 
   .sectionTitle {
     font-family: Georgia, serif; font-size: 1.25rem; text-align: center; margin: 0 0 22px;
   }
-  .steps { margin: 48px 0; }
-  .stepGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .step {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 20px 16px; text-align: center;
-  }
+  .steps { margin: 52px 0; }
+  .stepGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .step { text-align: center; padding: 0 6px; }
   .stepNum {
-    display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
     border-radius: 50%; background: var(--coral-soft); color: var(--coral); font-weight: 700;
-    font-size: 0.82rem; margin-bottom: 10px;
+    font-size: 0.86rem; margin-bottom: 12px;
   }
   .step h3 { font-size: 0.94rem; margin: 4px 0 6px; }
   .step p { font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
@@ -207,11 +231,14 @@ UPLOAD_FORM = f"""
     <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
     <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
     <p class="lede">{{{{ t.lede }}}}</p>
+    <a href="#uploadForm" class="btnHero">{{{{ t.cta_scroll }}}}</a>
     <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
   </div>
 
   <div class="demoWrap">
     <div class="demoFrame">
+      <span class="demoTime">0:07</span>
+      <span class="demoPlay"></span>
       <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
     </div>
     <p class="demoLabel">{{{{ t.demo_label }}}}</p>
@@ -238,7 +265,7 @@ UPLOAD_FORM = f"""
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="uploadForm">
     <form action="/process" method="post" enctype="multipart/form-data">
       <label for="video">{{{{ t.label_video }}}}</label>
       <input type="file" id="video" name="video" accept="video/*" required>
@@ -251,6 +278,7 @@ UPLOAD_FORM = f"""
       <label for="email">{{{{ t.label_email }}}}</label>
       <input type="email" id="email" name="email" required>
       <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
+      <p class="formNote">{{{{ t.free_note|safe }}}}</p>
     </form>
   </div>
 
