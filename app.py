@@ -201,10 +201,12 @@ BRAND_HEAD = """
     position: absolute; left: 12px; right: 12px; bottom: 22px;
     background: rgba(0,0,0,0.55); color: #fff; font-weight: 700; font-size: 0.82rem; line-height: 1.35;
     padding: 9px 10px; border-radius: 10px; text-align: center; border: 2px solid var(--coral);
+    transition: opacity 0.25s ease;
   }
   .demoTime {
     position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.4); color: #fff;
     font-family: ui-monospace, monospace; font-size: 0.68rem; padding: 3px 8px; border-radius: 999px;
+    transition: opacity 0.25s ease;
   }
   .demoPlay {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -62%);
@@ -353,15 +355,40 @@ UPLOAD_FORM = f"""
 
       <div class="half demoWrap">
         <div class="demoFrame">
-          <span class="demoTime">0:07</span>
+          <span class="demoTime" id="demoTime">0:07</span>
           <span class="demoPlay"></span>
-          <div class="demoCaption">{{{{ t.demo_caption }}}}</div>
+          <div class="demoCaption" id="demoCaption">{{{{ t.demo_caption }}}}</div>
         </div>
         <p class="demoLabel">{{{{ t.demo_label }}}}</p>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  (function () {{
+    var captions = [
+      {{{{ t.demo_caption|tojson }}}},
+      {{{{ t.demo_caption2|tojson }}}},
+      {{{{ t.demo_caption3|tojson }}}}
+    ];
+    var times = ["0:07", "0:12", "0:19"];
+    var i = 0;
+    var captionEl = document.getElementById("demoCaption");
+    var timeEl = document.getElementById("demoTime");
+    setInterval(function () {{
+      i = (i + 1) % captions.length;
+      captionEl.style.opacity = "0";
+      timeEl.style.opacity = "0";
+      setTimeout(function () {{
+        captionEl.textContent = captions[i];
+        timeEl.textContent = times[i];
+        captionEl.style.opacity = "1";
+        timeEl.style.opacity = "1";
+      }}, 250);
+    }}, 2600);
+  }})();
+</script>
 
 <div class="heroOuter contentSection">
   <div class="splitRow contentRow">
