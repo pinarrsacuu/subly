@@ -12,6 +12,7 @@ import uuid
 from pathlib import Path
 
 from flask import Flask, request, render_template_string, send_from_directory, session, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth import oauth, init_auth
 from transcribe import extract_audio, transcribe, write_srt
@@ -27,6 +28,10 @@ from jobs import init_jobs_db, create_job, get_job, mark_processing, mark_done, 
 from notify import send_ready_email, send_error_email
 
 app = Flask(__name__)
+# Render/Cloudflare HTTPS'i sonlandirip Flask'a duz HTTP olarak iletiyor - bu
+# olmadan url_for(_external=True) (ornegin Google OAuth callback adresi) yanlislikla
+# http:// uretip Google'in "redirect_uri_mismatch" hatasina yol aciyordu.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ["SECRET_KEY"]
 init_db()
 init_jobs_db()
