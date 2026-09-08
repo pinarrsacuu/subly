@@ -20,13 +20,18 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 FREE_MONTHLY_LIMIT = 3          # ucretsiz planda ayda islenebilecek video sayisi
 FREE_MAX_DURATION_SECONDS = 90  # ucretsiz planda video basina sure sinirI (1.5 dk)
 
-PRO_MONTHLY_LIMIT = 30           # Pro planda ayda islenebilecek video sayisi
-PRO_MAX_DURATION_SECONDS = 600   # Pro planda video basina sure siniri (10 dk)
+PRO_MONTHLY_LIMIT = 20           # Pro planda ayda islenebilecek video sayisi
+PRO_MAX_DURATION_SECONDS = 300   # Pro planda video basina sure siniri (5 dk)
 PRO_PRICE_TRY = 149              # Pro plan aylik fiyati (TL)
+
+PREMIUM_MONTHLY_LIMIT = 10           # Premium planda ayda islenebilecek video sayisi
+PREMIUM_MAX_DURATION_SECONDS = 900   # Premium planda video basina sure siniri (15 dk) - Render Starter'da gercek sureyle dogrulanacak
+PREMIUM_PRICE_TRY = 349              # Premium plan aylik fiyati (TL)
 
 PLAN_LIMITS = {
     "free": {"monthly_limit": FREE_MONTHLY_LIMIT, "max_duration": FREE_MAX_DURATION_SECONDS},
     "pro": {"monthly_limit": PRO_MONTHLY_LIMIT, "max_duration": PRO_MAX_DURATION_SECONDS},
+    "premium": {"monthly_limit": PREMIUM_MONTHLY_LIMIT, "max_duration": PREMIUM_MAX_DURATION_SECONDS},
 }
 
 

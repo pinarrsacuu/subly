@@ -7,6 +7,7 @@ Sonra tarayicidan: http://localhost:5001
 """
 
 import os
+import threading
 import uuid
 from pathlib import Path
 
@@ -18,11 +19,17 @@ from burn_captions import burn
 from translate import translate_segments, LANGUAGES
 from ui_strings import get_ui_language, get_ui_strings, get_client_ip, RTL_LANGS
 from video_utils import get_duration_seconds
-from usage_tracker import get_remaining, record_usage, init_db, upsert_user, get_user_plan, PLAN_LIMITS, PRO_PRICE_TRY
+from usage_tracker import (
+    get_remaining, record_usage, init_db, upsert_user, get_user_plan, PLAN_LIMITS,
+    PRO_PRICE_TRY, PREMIUM_PRICE_TRY,
+)
+from jobs import init_jobs_db, create_job, get_job, mark_processing, mark_done, mark_error
+from notify import send_ready_email, send_error_email
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
 init_db()
+init_jobs_db()
 init_auth(app)
 
 UPLOAD_DIR = Path("uploads")
@@ -188,7 +195,7 @@ BRAND_HEAD = """
   .step p { font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
 
   .pricing { margin: 56px 0 0; }
-  .planGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .planGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .planCard {
     background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
     padding: 22px; position: relative;
@@ -199,9 +206,9 @@ BRAND_HEAD = """
   .planCard p:last-child { font-size: 0.85rem; color: var(--ink-soft); margin: 0; line-height: 1.5; }
   .planPro { border-color: var(--coral); }
   .planBadge {
-    position: absolute; top: 16px; right: 16px; background: var(--coral-soft); color: var(--coral);
-    font-size: 0.66rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
-    text-transform: uppercase; letter-spacing: 0.04em;
+    display: inline-block; background: var(--coral-soft); color: var(--coral);
+    font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
   }
   @media (max-width: 560px) {
     .planGrid { grid-template-columns: 1fr; }
@@ -363,6 +370,12 @@ UPLOAD_FORM = f"""
         <p class="planPrice">&#8378;{{{{ pro_price }}}}<span>{{{{ t.per_month }}}}</span></p>
         <p>{{{{ t.pricing_pro_desc }}}}</p>
       </div>
+      <div class="planCard planPro">
+        <span class="planBadge">{{{{ t.pricing_soon }}}}</span>
+        <h3>Premium</h3>
+        <p class="planPrice">&#8378;{{{{ premium_price }}}}<span>{{{{ t.per_month }}}}</span></p>
+        <p>{{{{ t.pricing_premium_desc }}}}</p>
+      </div>
     </div>
   </div>
 
@@ -410,6 +423,29 @@ RESULT_PAGE = f"""
     <a href="/outputs/{{{{ filename }}}}" download class="btnPrimary">{{{{ t.download|safe }}}}</a>
     <br><br>
     <a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a>
+  </div>
+  <footer class="siteFoot">{{{{ t.footer }}}}</footer>
+</div>
+</body>
+</html>
+"""
+
+STATUS_PAGE = f"""
+<!doctype html>
+<html lang="{{{{ lang }}}}" dir="{{{{ dir }}}}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="4">
+  <title>Subly</title>
+  {BRAND_HEAD}
+</head>
+<body>
+<div class="wrap">
+  {NAV}
+  <div class="card">
+    <span class="badge">{{{{ t.processing_badge|safe }}}}</span>
+    <h1 class="headline">{{{{ t.processing_title|safe }}}}</h1>
+    <p class="lede">{{{{ t.processing_body }}}}</p>
   </div>
   <footer class="siteFoot">{{{{ t.footer }}}}</footer>
 </div>
@@ -465,20 +501,29 @@ def logout():
     return redirect(url_for("index"))
 
 
+def resolve_lang():
+    """Dili session'da onbellekler - /status sayfasi her birkac saniyede bir
+    kendini yeniledigi icin, her seferinde IP-konum servisine tekrar
+    sormamak (hem yavas hem de ucretsiz limiti zorlar) icin."""
+    if "lang" not in session:
+        session["lang"] = get_ui_language(request.accept_languages, get_client_ip(request))
+    return session["lang"]
+
+
 @app.route("/")
 def index():
-    lang = get_ui_language(request.accept_languages, get_client_ip(request))
+    lang = resolve_lang()
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
     return render_template_string(
         UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction, user=session.get("user"),
-        pro_price=PRO_PRICE_TRY,
+        pro_price=PRO_PRICE_TRY, premium_price=PREMIUM_PRICE_TRY,
     )
 
 
 @app.route("/process", methods=["POST"])
 def process():
-    lang = get_ui_language(request.accept_languages, get_client_ip(request))
+    lang = resolve_lang()
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
     user = session.get("user")
@@ -489,7 +534,7 @@ def process():
     uploaded = request.files["video"]
     target_language = request.form.get("language", "original")
     email = user["email"]
-    job_id = uuid.uuid4().hex[:8]
+    file_id = uuid.uuid4().hex[:8]
     limits = PLAN_LIMITS[get_user_plan(email)]
 
     # Plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
@@ -501,7 +546,7 @@ def process():
             error_body=t["error_limit_body"].format(limit=limits["monthly_limit"]),
         )
 
-    video_path = UPLOAD_DIR / f"{job_id}_{uploaded.filename}"
+    video_path = UPLOAD_DIR / f"{file_id}_{uploaded.filename}"
     uploaded.save(video_path)
 
     # Plan kontrolu 2: video suresi sinirin altinda mi?
@@ -514,21 +559,65 @@ def process():
             error_body=t["error_duration_body"].format(max_min=limits["max_duration"] / 60),
         )
 
-    audio_path = extract_audio(video_path)
-    segments = transcribe(audio_path)
-    if target_language != "original":
-        segments = translate_segments(segments, target_language)
-    srt_path = video_path.with_suffix(".srt")
-    write_srt(segments, srt_path)
-    audio_path.unlink()
+    # Asil isleme (transkript + ceviri + altyazi yakma) arka planda bir thread'de
+    # calisir - boylece uzun videolarda HTTP istegi/Cloudflare proxy timeout'una
+    # takilmadan kullaniciyi hemen /status sayfasina yonlendirebiliyoruz.
+    job_id = create_job(email)
+    status_url = url_for("job_status", job_id=job_id, _external=True)
+    thread = threading.Thread(
+        target=run_job,
+        args=(job_id, file_id, video_path, target_language, email, status_url, t),
+        daemon=True,
+    )
+    thread.start()
 
-    output_filename = f"{job_id}_captioned.mp4"
-    output_path = OUTPUT_DIR / output_filename
-    burn(video_path, srt_path, output_path)
+    return redirect(url_for("job_status", job_id=job_id))
 
-    record_usage(email)
 
-    return render_template_string(RESULT_PAGE, filename=output_filename, t=t, lang=lang, dir=direction, user=user)
+def run_job(job_id, file_id, video_path, target_language, email, status_url, t):
+    mark_processing(job_id)
+    try:
+        audio_path = extract_audio(video_path)
+        segments = transcribe(audio_path)
+        if target_language != "original":
+            segments = translate_segments(segments, target_language)
+        srt_path = video_path.with_suffix(".srt")
+        write_srt(segments, srt_path)
+        audio_path.unlink()
+
+        output_filename = f"{file_id}_captioned.mp4"
+        output_path = OUTPUT_DIR / output_filename
+        burn(video_path, srt_path, output_path)
+
+        record_usage(email)
+        mark_done(job_id, output_filename)
+        send_ready_email(email, status_url)
+    except Exception as exc:
+        mark_error(job_id, t["processing_error_title"], f'{t["processing_error_body"]} ({exc})')
+        send_error_email(email, status_url)
+
+
+@app.route("/status/<job_id>")
+def job_status(job_id):
+    lang = resolve_lang()
+    t = get_ui_strings(lang)
+    direction = "rtl" if lang in RTL_LANGS else "ltr"
+    user = session.get("user")
+
+    job = get_job(job_id)
+    if not job:
+        return redirect(url_for("index"))
+
+    if job["status"] == "done":
+        return render_template_string(
+            RESULT_PAGE, filename=job["output_filename"], t=t, lang=lang, dir=direction, user=user,
+        )
+    if job["status"] == "error":
+        return render_template_string(
+            ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
+            error_title=job["error_title"], error_body=job["error_body"],
+        )
+    return render_template_string(STATUS_PAGE, t=t, lang=lang, dir=direction, user=user)
 
 
 @app.route("/outputs/<path:filename>")
