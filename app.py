@@ -102,9 +102,10 @@ BRAND_HEAD = """
   .navActions { display: flex; align-items: center; gap: 10px; }
   .btnGhostNav {
     color: var(--ink); text-decoration: none; font-size: 0.88rem; font-weight: 600;
-    padding: 9px 14px; border-radius: 999px; transition: background 0.15s ease;
+    padding: 9px 18px; border-radius: 999px; border: 1.5px solid var(--border);
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
-  .btnGhostNav:hover { background: var(--surface); }
+  .btnGhostNav:hover { background: var(--surface); border-color: var(--ink-soft); }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
   .brand .mark { width: 40px; height: 40px; flex: none; display: block; }
   .brand .names { display: flex; flex-direction: column; line-height: 1.15; }
@@ -197,16 +198,20 @@ BRAND_HEAD = """
   /* Iki katmanli hero butonu (Submagic'in "Get Started Now [Try for free]"
      tarzi) - disi koyu, icindeki rozet coral renginde vurgu yapiyor. */
   .btnNested {
-    display: inline-flex; align-items: center; gap: 12px; margin-top: 22px;
+    display: inline-flex; align-items: center; gap: 14px; margin-top: 24px;
     background: var(--ink); color: #fff; border: none; cursor: pointer;
-    padding: 8px 8px 8px 24px; border-radius: 999px; font: inherit; font-size: 1rem; font-weight: 700;
+    padding: 9px 9px 9px 28px; border-radius: 999px; font: inherit; font-size: 1.08rem; font-weight: 800;
     text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 16px 32px -14px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 20px 44px -16px rgba(0, 0, 0, 0.55), 0 0 0 6px var(--coral-soft);
   }
-  .btnNested:hover { transform: translateY(-2px); box-shadow: 0 20px 38px -14px rgba(0, 0, 0, 0.55); }
+  .btnNested:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6), 0 0 0 8px var(--coral-soft);
+  }
   .btnNestedBadge {
-    background: var(--coral); color: #fff; padding: 11px 20px; border-radius: 999px;
-    font-size: 0.88rem; font-weight: 700; white-space: nowrap;
+    background: var(--coral); color: #fff; padding: 13px 24px; border-radius: 999px;
+    font-size: 0.94rem; font-weight: 800; white-space: nowrap;
+    box-shadow: 0 8px 20px -6px rgba(214, 69, 92, 0.7);
   }
 
   .badge {
