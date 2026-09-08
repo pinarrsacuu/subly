@@ -20,6 +20,15 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 FREE_MONTHLY_LIMIT = 3          # ucretsiz planda ayda islenebilecek video sayisi
 FREE_MAX_DURATION_SECONDS = 90  # ucretsiz planda video basina sure sinirI (1.5 dk)
 
+PRO_MONTHLY_LIMIT = 30           # Pro planda ayda islenebilecek video sayisi
+PRO_MAX_DURATION_SECONDS = 600   # Pro planda video basina sure siniri (10 dk)
+PRO_PRICE_TRY = 149              # Pro plan aylik fiyati (TL)
+
+PLAN_LIMITS = {
+    "free": {"monthly_limit": FREE_MONTHLY_LIMIT, "max_duration": FREE_MAX_DURATION_SECONDS},
+    "pro": {"monthly_limit": PRO_MONTHLY_LIMIT, "max_duration": PRO_MAX_DURATION_SECONDS},
+}
+
 
 def _connect():
     return psycopg2.connect(DATABASE_URL)
@@ -41,14 +50,21 @@ def init_db() -> None:
                     email TEXT PRIMARY KEY,
                     name TEXT,
                     picture TEXT,
+                    plan TEXT NOT NULL DEFAULT 'free',
+                    subscription_reference TEXT,
+                    current_period_end TIMESTAMPTZ,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
                 )
             """)
+            # users tablosu daha once (bu sutunlar olmadan) olusturulmus olabilir - ekle.
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free'")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_reference TEXT")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ")
         conn.commit()
 
 
 def upsert_user(email: str, name: str, picture: str) -> None:
-    """Google ile giris yapan kullaniciyi kaydeder/gunceller (isim, foto)."""
+    """Google ile giris yapan kullaniciyi kaydeder/gunceller (isim, foto). Plan durumuna dokunmaz."""
     key = email.lower()
     with _connect() as conn:
         with conn.cursor() as cur:
@@ -60,12 +76,39 @@ def upsert_user(email: str, name: str, picture: str) -> None:
         conn.commit()
 
 
+def get_user_plan(email: str) -> str:
+    """Kullanicinin plani ('free' ya da 'pro'). Suresi gecmis Pro abonelik otomatik 'free'ye doner."""
+    key = email.lower()
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT plan, current_period_end FROM users WHERE email = %s", (key,))
+            row = cur.fetchone()
+    if not row:
+        return "free"
+    plan, period_end = row
+    if plan == "pro" and period_end is not None and period_end < datetime.now(timezone.utc):
+        return "free"
+    return plan
+
+
+def set_plan(email: str, plan: str, subscription_reference: str = None, current_period_end=None) -> None:
+    """Odeme basarili/iptal oldugunda kullanicinin planini gunceller (webhook'tan cagrilir)."""
+    key = email.lower()
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE users SET plan = %s, subscription_reference = %s, current_period_end = %s
+                WHERE email = %s
+            """, (plan, subscription_reference, current_period_end, key))
+        conn.commit()
+
+
 def _current_month() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m")
 
 
-def get_remaining(email: str) -> int:
-    """Bu ay icin kalan ucretsiz video hakkini dondurur."""
+def get_remaining(email: str, monthly_limit: int) -> int:
+    """Bu ay icin kalan video hakkini dondurur (plana gore monthly_limit disaridan verilir)."""
     key = email.lower()
     month = _current_month()
     with _connect() as conn:
@@ -73,8 +116,8 @@ def get_remaining(email: str) -> int:
             cur.execute("SELECT month, count FROM usage WHERE email = %s", (key,))
             row = cur.fetchone()
     if not row or row[0] != month:
-        return FREE_MONTHLY_LIMIT
-    return max(0, FREE_MONTHLY_LIMIT - row[1])
+        return monthly_limit
+    return max(0, monthly_limit - row[1])
 
 
 def record_usage(email: str) -> None:

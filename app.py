@@ -18,7 +18,7 @@ from burn_captions import burn
 from translate import translate_segments, LANGUAGES
 from ui_strings import get_ui_language, get_ui_strings, get_client_ip, RTL_LANGS
 from video_utils import get_duration_seconds
-from usage_tracker import get_remaining, record_usage, init_db, upsert_user, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
+from usage_tracker import get_remaining, record_usage, init_db, upsert_user, get_user_plan, PLAN_LIMITS, PRO_PRICE_TRY
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
@@ -187,6 +187,26 @@ BRAND_HEAD = """
   .step h3 { font-size: 0.94rem; margin: 4px 0 6px; }
   .step p { font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
 
+  .pricing { margin: 56px 0 0; }
+  .planGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .planCard {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; position: relative;
+  }
+  .planCard h3 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 1.05rem; }
+  .planPrice { font-size: 1.6rem; font-weight: 700; margin: 0 0 10px; }
+  .planPrice span { font-size: 0.8rem; font-weight: 400; color: var(--ink-soft); }
+  .planCard p:last-child { font-size: 0.85rem; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+  .planPro { border-color: var(--coral); }
+  .planBadge {
+    position: absolute; top: 16px; right: 16px; background: var(--coral-soft); color: var(--coral);
+    font-size: 0.66rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  @media (max-width: 560px) {
+    .planGrid { grid-template-columns: 1fr; }
+  }
+
   .faq { margin: 56px 0 8px; }
   .faq details {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -329,6 +349,23 @@ UPLOAD_FORM = f"""
 </div>
 
 <div class="wrap">
+  <div class="pricing">
+    <h2 class="sectionTitle">{{{{ t.pricing_title }}}}</h2>
+    <div class="planGrid">
+      <div class="planCard">
+        <h3>Free</h3>
+        <p class="planPrice">$0</p>
+        <p>{{{{ t.free_note|safe }}}}</p>
+      </div>
+      <div class="planCard planPro">
+        <span class="planBadge">{{{{ t.pricing_soon }}}}</span>
+        <h3>Pro</h3>
+        <p class="planPrice">&#8378;{{{{ pro_price }}}}<span>{{{{ t.per_month }}}}</span></p>
+        <p>{{{{ t.pricing_pro_desc }}}}</p>
+      </div>
+    </div>
+  </div>
+
   <div class="faq">
     <h2 class="sectionTitle">{{{{ t.faq_title }}}}</h2>
     <details>
@@ -435,6 +472,7 @@ def index():
     direction = "rtl" if lang in RTL_LANGS else "ltr"
     return render_template_string(
         UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction, user=session.get("user"),
+        pro_price=PRO_PRICE_TRY,
     )
 
 
@@ -452,27 +490,28 @@ def process():
     target_language = request.form.get("language", "original")
     email = user["email"]
     job_id = uuid.uuid4().hex[:8]
+    limits = PLAN_LIMITS[get_user_plan(email)]
 
-    # Ucretsiz plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
+    # Plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
     # bakiyoruz ki API maliyetine hic girmeyelim.
-    if get_remaining(email) <= 0:
+    if get_remaining(email, limits["monthly_limit"]) <= 0:
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_limit_title"],
-            error_body=t["error_limit_body"].format(limit=FREE_MONTHLY_LIMIT),
+            error_body=t["error_limit_body"].format(limit=limits["monthly_limit"]),
         )
 
     video_path = UPLOAD_DIR / f"{job_id}_{uploaded.filename}"
     uploaded.save(video_path)
 
-    # Ucretsiz plan kontrolu 2: video suresi sinirin altinda mi?
+    # Plan kontrolu 2: video suresi sinirin altinda mi?
     duration = get_duration_seconds(video_path)
-    if duration > FREE_MAX_DURATION_SECONDS:
+    if duration > limits["max_duration"]:
         video_path.unlink()
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_duration_title"],
-            error_body=t["error_duration_body"].format(max_min=FREE_MAX_DURATION_SECONDS / 60),
+            error_body=t["error_duration_body"].format(max_min=limits["max_duration"] / 60),
         )
 
     audio_path = extract_audio(video_path)
