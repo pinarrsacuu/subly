@@ -41,7 +41,17 @@ def burn(video_path: Path, srt_path: Path, output_path: Path):
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-crf", "23",
-            "-c:a", "copy",
+            # Tek thread: coklu thread her biri kendi frame tamponunu tuttugu icin
+            # 512MB'lik dar bellekte encode hizindan bellekten tasarrufu tercih ediyoruz.
+            "-threads", "1",
+            # "-c:a copy" orijinal ses akisini oldugu gibi kopyaliyordu; eger
+            # telefon kaydi gibi degisken kare hizli (VFR) bir video geldiyse,
+            # yeniden kodlanan video ile kopyalanan sesin zaman damgalari
+            # uyusmayabiliyor - ffmpeg bunu telafi etmek icin sinirsiz paket
+            # biriktirebiliyor (muxing queue), bu da OOM'a yol acan gizli bir
+            # sebep olabilir. Sesi de yeniden kodlayarak bunu onluyoruz.
+            "-c:a", "aac",
+            "-b:a", "128k",
             str(output_path),
         ],
         check=True,
