@@ -21,7 +21,8 @@ from translate import translate_segments, LANGUAGES
 from ui_strings import get_ui_language, get_ui_strings, get_client_ip, RTL_LANGS
 from video_utils import get_duration_seconds
 from usage_tracker import (
-    get_remaining, record_usage, init_db, upsert_user, get_user_plan, PLAN_LIMITS,
+    get_remaining, record_usage, get_ip_remaining, record_ip_usage,
+    init_db, upsert_user, get_user_plan, PLAN_LIMITS, FREE_MONTHLY_LIMIT,
     PRO_PRICE_TRY, PREMIUM_PRICE_TRY,
 )
 from jobs import init_jobs_db, create_job, get_job, mark_processing, mark_done, mark_error
@@ -630,8 +631,11 @@ def process():
     target_language = request.form.get("language", "original")
     cover_subs = request.form.get("cover_subs") == "on"
     email = user["email"]
+    ip = get_client_ip(request)
     file_id = uuid.uuid4().hex[:8]
-    limits = PLAN_LIMITS[get_user_plan(email)]
+    plan = get_user_plan(email)
+    limits = PLAN_LIMITS[plan]
+    is_free = plan == "free"
 
     # Plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
     # bakiyoruz ki API maliyetine hic girmeyelim.
@@ -640,6 +644,17 @@ def process():
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_limit_title"],
             error_body=t["error_limit_body"].format(limit=limits["monthly_limit"]),
+        )
+
+    # Plan kontrolu 1b: sadece ucretsiz plan icin - ayni IP'den farkli Google
+    # hesaplariyla (email degistirerek) limiti asma girisimini zorlastirmak
+    # icin ayrica IP bazli da sayiyoruz. Odeme yapan kullanicilar (pro/premium)
+    # bundan etkilenmiyor.
+    if is_free and get_ip_remaining(ip, FREE_MONTHLY_LIMIT) <= 0:
+        return render_template_string(
+            ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
+            error_title=t["error_limit_title"],
+            error_body=t["error_limit_body"].format(limit=FREE_MONTHLY_LIMIT),
         )
 
     video_path = UPLOAD_DIR / f"{file_id}_{uploaded.filename}"
@@ -662,7 +677,7 @@ def process():
     status_url = url_for("job_status", job_id=job_id, _external=True)
     thread = threading.Thread(
         target=run_job,
-        args=(job_id, file_id, video_path, target_language, cover_subs, email, status_url, t),
+        args=(job_id, file_id, video_path, target_language, cover_subs, email, ip, is_free, status_url, t),
         daemon=True,
     )
     thread.start()
@@ -670,7 +685,7 @@ def process():
     return redirect(url_for("job_status", job_id=job_id))
 
 
-def run_job(job_id, file_id, video_path, target_language, cover_subs, email, status_url, t):
+def run_job(job_id, file_id, video_path, target_language, cover_subs, email, ip, is_free, status_url, t):
     mark_processing(job_id)
     try:
         audio_path = extract_audio(video_path)
@@ -688,6 +703,8 @@ def run_job(job_id, file_id, video_path, target_language, cover_subs, email, sta
         srt_path.unlink()
 
         record_usage(email)
+        if is_free:
+            record_ip_usage(ip)
         mark_done(job_id, output_filename)
         send_ready_email(email, status_url)
     except Exception as exc:

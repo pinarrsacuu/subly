@@ -17,16 +17,16 @@ import psycopg2
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-FREE_MONTHLY_LIMIT = 3          # ucretsiz planda ayda islenebilecek video sayisi
-FREE_MAX_DURATION_SECONDS = 90  # ucretsiz planda video basina sure sinirI (1.5 dk)
+FREE_MONTHLY_LIMIT = 3           # ucretsiz planda ayda islenebilecek video sayisi
+FREE_MAX_DURATION_SECONDS = 180  # ucretsiz planda video basina sure siniri (3 dk) - async mimariye gecince Cloudflare timeout riski kalkti, 90 sn'den yukselttik
 
 PRO_MONTHLY_LIMIT = 20           # Pro planda ayda islenebilecek video sayisi
-PRO_MAX_DURATION_SECONDS = 300   # Pro planda video basina sure siniri (5 dk)
+PRO_MAX_DURATION_SECONDS = 480   # Pro planda video basina sure siniri (8 dk)
 PRO_PRICE_TRY = 149              # Pro plan aylik fiyati (TL)
 
-PREMIUM_MONTHLY_LIMIT = 10           # Premium planda ayda islenebilecek video sayisi
-PREMIUM_MAX_DURATION_SECONDS = 900   # Premium planda video basina sure siniri (15 dk) - Render Starter'da gercek sureyle dogrulanacak
-PREMIUM_PRICE_TRY = 349              # Premium plan aylik fiyati (TL)
+PREMIUM_MONTHLY_LIMIT = 15            # Premium planda ayda islenebilecek video sayisi
+PREMIUM_MAX_DURATION_SECONDS = 1200   # Premium planda video basina sure siniri (20 dk) - Render Starter'da gercek sureyle dogrulanacak
+PREMIUM_PRICE_TRY = 349               # Premium plan aylik fiyati (TL)
 
 PLAN_LIMITS = {
     "free": {"monthly_limit": FREE_MONTHLY_LIMIT, "max_duration": FREE_MAX_DURATION_SECONDS},
@@ -46,6 +46,17 @@ def init_db() -> None:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS usage (
                     email TEXT PRIMARY KEY,
+                    month TEXT NOT NULL,
+                    count INTEGER NOT NULL DEFAULT 0
+                )
+            """)
+            # Ayni IP'den farkli email'lerle (birden fazla Google hesabi) ucretsiz
+            # limiti asma girisimini zorlastirmak icin - sadece free plandaki
+            # kullanicilar icin sayiliyor, odeme yapan kullanicilar IP'ye gore
+            # kisitlanmiyor (paylasilan ofis/wifi IP'sinde haksiz yere engellenmesinler).
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS usage_ip (
+                    ip TEXT PRIMARY KEY,
                     month TEXT NOT NULL,
                     count INTEGER NOT NULL DEFAULT 0
                 )
@@ -141,4 +152,38 @@ def record_usage(email: str) -> None:
                         ELSE 1
                     END
             """, (key, month))
+        conn.commit()
+
+
+def get_ip_remaining(ip: str, monthly_limit: int) -> int:
+    """Bu ay bu IP icin kalan ucretsiz video hakkini dondurur."""
+    if not ip:
+        return monthly_limit
+    month = _current_month()
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT month, count FROM usage_ip WHERE ip = %s", (ip,))
+            row = cur.fetchone()
+    if not row or row[0] != month:
+        return monthly_limit
+    return max(0, monthly_limit - row[1])
+
+
+def record_ip_usage(ip: str) -> None:
+    """Ucretsiz plandaki bir kullanici video isledikce IP sayacini bir artirir."""
+    if not ip:
+        return
+    month = _current_month()
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO usage_ip (ip, month, count)
+                VALUES (%s, %s, 1)
+                ON CONFLICT (ip) DO UPDATE SET
+                    month = EXCLUDED.month,
+                    count = CASE
+                        WHEN usage_ip.month = EXCLUDED.month THEN usage_ip.count + 1
+                        ELSE 1
+                    END
+            """, (ip, month))
         conn.commit()

@@ -20,7 +20,15 @@ client = OpenAI()
 def extract_audio(video_path: Path) -> Path:
     audio_path = video_path.with_suffix(".mp3")
     subprocess.run(
-        ["ffmpeg", "-y", "-i", str(video_path), "-vn", "-acodec", "libmp3lame", str(audio_path)],
+        [
+            "ffmpeg", "-y", "-i", str(video_path), "-vn", "-acodec", "libmp3lame",
+            # Mono + dusuk bit hizi: konusma icin yeterli, ama dosya boyutunu
+            # kucultuyor - Premium'da 20 dakikaya kadar video izin verdigimiz
+            # icin Whisper API'nin 25MB dosya sinirina yeterli pay birakiyoruz
+            # (64kbps'de 20 dk ses ~9.6MB, varsayilan ayarlarla sinira yakindi).
+            "-ac", "1", "-b:a", "64k",
+            str(audio_path),
+        ],
         check=True,
         capture_output=True,
     )
