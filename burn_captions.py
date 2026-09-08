@@ -22,6 +22,14 @@ CAPTION_STYLE = (
     "MarginV=60"
 )
 
+# Render Starter'in 512MB RAM'i, 1080p+ bir videoyu ffmpeg ile kodlarken bellek
+# tasmasina (OOM) ve sunucu cokmesine yol aciyordu. Uzun kenari 720p'ye
+# indirerek bellek/CPU kullanimini ciddi sekilde azaltiyoruz - kucuk (720p ve
+# alti) videolar zaten degismeden kaliyor (min(1280, ...) sayesinde buyutme yok).
+SCALE_FILTER = (
+    "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'"
+)
+
 
 def burn(video_path: Path, srt_path: Path, output_path: Path):
     srt_escaped = str(srt_path).replace(":", "\\:")
@@ -29,7 +37,7 @@ def burn(video_path: Path, srt_path: Path, output_path: Path):
         [
             "ffmpeg", "-y",
             "-i", str(video_path),
-            "-vf", f"subtitles={srt_escaped}:force_style='{CAPTION_STYLE}'",
+            "-vf", f"{SCALE_FILTER},subtitles={srt_escaped}:force_style='{CAPTION_STYLE}'",
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-crf", "23",
