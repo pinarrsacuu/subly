@@ -75,20 +75,20 @@ BRAND_HEAD = """
   }
   h1, h2 { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
   .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
   .heroOuter { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
   .splitRow { display: block; }
   @media (min-width: 860px) {
-    .splitRow { display: flex; align-items: center; gap: 56px; }
+    .splitRow { display: flex; align-items: center; gap: 64px; }
     .splitRow > .half { flex: 1 1 50%; min-width: 0; }
   }
-  .heroBanner { padding: 40px; }
+  .heroBanner { padding: 44px 40px; }
   .heroBanner .demoWrap { margin: 40px 0 0; }
   @media (min-width: 860px) {
-    .heroBanner { padding: 48px; }
+    .heroBanner { padding: 56px; }
     .heroBanner .demoWrap { margin: 0; }
   }
-  .contentSection { margin-top: 48px; }
+  .contentSection { margin-top: 64px; }
   .contentRow { margin: 8px 0 0; }
   .contentRow .stepsPanel { padding: 6px 0; }
   .contentRow .stepGrid { grid-template-columns: 1fr; gap: 26px; }
@@ -166,13 +166,28 @@ BRAND_HEAD = """
   }
   .btnPrimary:hover { transform: translateY(-2px); }
 
+  /* Cikis yapmis kullaniciya bos bir kutu yerine formun kendisini (devre disi/soluk)
+     gosterip ustune giris istemini bindiriyoruz - "yarim kalmis" hissini onluyor. */
+  .lockedForm { position: relative; min-height: 260px; }
+  .lockedForm fieldset { border: none; padding: 0; margin: 0; opacity: 0.35; filter: blur(0.3px); pointer-events: none; }
+  .lockedOverlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; gap: 4px;
+    background: linear-gradient(180deg, transparent, var(--surface) 38%);
+  }
+  .lockedOverlay .lede { margin: 0 0 6px; max-width: 260px; }
+  .lockedOverlay .btnPrimary { margin-top: 0; }
+
   .btnHero {
     display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
-    background: transparent; color: var(--coral); border: 1.5px solid var(--coral); cursor: pointer;
-    padding: 11px 24px; border-radius: 999px; font: inherit; font-size: 0.92rem; font-weight: 600;
-    text-decoration: none; transition: transform 0.15s ease, background 0.15s ease;
+    background: var(--coral); color: #fff; border: none; cursor: pointer;
+    padding: 15px 30px; border-radius: 999px; font: inherit; font-size: 1rem; font-weight: 700;
+    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 16px 32px -12px rgba(214, 69, 92, 0.55);
   }
-  .btnHero:hover { transform: translateY(-2px); background: var(--coral-soft); }
+  .btnHero:hover { transform: translateY(-2px); box-shadow: 0 20px 38px -12px rgba(214, 69, 92, 0.65); }
+  .navLogin { padding: 10px 20px; font-size: 0.88rem; margin-top: 0; box-shadow: none; }
+  .navLogin:hover { box-shadow: 0 10px 20px -10px rgba(214, 69, 92, 0.55); }
 
   .badge {
     display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, monospace;
@@ -438,8 +453,24 @@ UPLOAD_FORM = f"""
           }}
         </script>
       {{% else %}}
-        <p class="lede">{{{{ t.login_prompt }}}}</p>
-        <a href="/login/google" class="btnPrimary">{{{{ t.login_google }}}}</a>
+        <div class="lockedForm">
+          <fieldset disabled>
+            <label for="video_locked">{{{{ t.label_video }}}}</label>
+            <input type="file" id="video_locked">
+            <label for="language_locked">{{{{ t.label_language }}}}</label>
+            <select id="language_locked">
+              {{% for value, label in languages %}}
+                <option value="{{{{ value }}}}">{{{{ label }}}}</option>
+              {{% endfor %}}
+            </select>
+            <label class="checkboxRow"><input type="checkbox"> {{{{ t.cover_subs_label }}}}</label>
+            <button type="button" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
+          </fieldset>
+          <div class="lockedOverlay">
+            <p class="lede">{{{{ t.login_prompt }}}}</p>
+            <a href="/login/google" class="btnPrimary">{{{{ t.login_google }}}}</a>
+          </div>
+        </div>
       {{% endif %}}
     </div>
 
