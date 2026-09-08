@@ -91,6 +91,9 @@ UI_STRINGS = {
         "error_limit_body": "Free plan includes {limit} videos per month. Paid plans are coming soon — check back shortly!",
         "error_duration_title": "Video is too long",
         "error_duration_body": "Free plan supports videos up to {max_min} minutes. Try a shorter clip, or wait for paid plans.",
+        "login_google": "Sign in with Google",
+        "logout": "Log out",
+        "login_prompt": "Sign in with Google to upload your video.",
         "footer": "Subly is built by Nexi Digital.",
     },
     "es": {
@@ -129,6 +132,9 @@ UI_STRINGS = {
         "error_limit_body": "El plan gratuito incluye {limit} videos al mes. Los planes de pago llegan pronto.",
         "error_duration_title": "El video es demasiado largo",
         "error_duration_body": "El plan gratuito admite videos de hasta {max_min} minutos. Prueba un clip mas corto.",
+        "login_google": "Iniciar sesión con Google",
+        "logout": "Cerrar sesión",
+        "login_prompt": "Inicia sesión con Google para subir tu video.",
         "footer": "Subly esta construido por Nexi Digital.",
     },
     "pt": {
@@ -167,6 +173,9 @@ UI_STRINGS = {
         "error_limit_body": "O plano gratuito inclui {limit} videos por mes. Os planos pagos chegam em breve.",
         "error_duration_title": "O video e muito longo",
         "error_duration_body": "O plano gratuito aceita videos de ate {max_min} minutos. Tente um video mais curto.",
+        "login_google": "Entrar com o Google",
+        "logout": "Sair",
+        "login_prompt": "Entre com o Google para enviar seu vídeo.",
         "footer": "Subly e desenvolvido pela Nexi Digital.",
     },
     "fr": {
@@ -205,6 +214,9 @@ UI_STRINGS = {
         "error_limit_body": "Le plan gratuit inclut {limit} videos par mois. Les plans payants arrivent bientot.",
         "error_duration_title": "La video est trop longue",
         "error_duration_body": "Le plan gratuit accepte des videos jusqu'a {max_min} minutes. Essayez un clip plus court.",
+        "login_google": "Se connecter avec Google",
+        "logout": "Se déconnecter",
+        "login_prompt": "Connectez-vous avec Google pour importer votre vidéo.",
         "footer": "Subly est developpe par Nexi Digital.",
     },
     "de": {
@@ -243,6 +255,9 @@ UI_STRINGS = {
         "error_limit_body": "Der kostenlose Plan umfasst {limit} Videos pro Monat. Bezahlplane kommen bald.",
         "error_duration_title": "Video ist zu lang",
         "error_duration_body": "Der kostenlose Plan unterstuetzt Videos bis zu {max_min} Minuten. Versuch einen kuerzeren Clip.",
+        "login_google": "Mit Google anmelden",
+        "logout": "Abmelden",
+        "login_prompt": "Melde dich mit Google an, um dein Video hochzuladen.",
         "footer": "Subly wird von Nexi Digital entwickelt.",
     },
     "it": {
@@ -281,6 +296,9 @@ UI_STRINGS = {
         "error_limit_body": "Il piano gratuito include {limit} video al mese. I piani a pagamento arrivano presto.",
         "error_duration_title": "Il video e troppo lungo",
         "error_duration_body": "Il piano gratuito supporta video fino a {max_min} minuti. Prova una clip piu corta.",
+        "login_google": "Accedi con Google",
+        "logout": "Esci",
+        "login_prompt": "Accedi con Google per caricare il tuo video.",
         "footer": "Subly e sviluppato da Nexi Digital.",
     },
     "tr": {
@@ -319,6 +337,9 @@ UI_STRINGS = {
         "error_limit_body": "Ucretsiz plan ayda {limit} video icerir. Ucretli planlar yakinda geliyor!",
         "error_duration_title": "Video cok uzun",
         "error_duration_body": "Ucretsiz planda videolar en fazla {max_min} dakika olabilir. Daha kisa bir video dene.",
+        "login_google": "Google ile giris yap",
+        "logout": "Cikis yap",
+        "login_prompt": "Videonu yuklemek icin Google ile giris yap.",
         "footer": "Subly, Nexi Digital tarafindan gelistirilmistir.",
     },
     "ar": {
@@ -357,6 +378,9 @@ UI_STRINGS = {
         "error_limit_body": "تشمل الخطة المجانية {limit} فيديو شهريًا. الخطط المدفوعة قادمة قريبًا.",
         "error_duration_title": "الفيديو طويل جدًا",
         "error_duration_body": "تدعم الخطة المجانية فيديوهات حتى {max_min} دقيقة. جرب مقطعًا أقصر.",
+        "login_google": "تسجيل الدخول بواسطة Google",
+        "logout": "تسجيل الخروج",
+        "login_prompt": "سجّل الدخول بواسطة Google لرفع الفيديو.",
         "footer": "تم تطوير Subly بواسطة Nexi Digital.",
     },
     "hi": {
@@ -395,6 +419,9 @@ UI_STRINGS = {
         "error_limit_body": "मुफ़्त योजना में हर महीने {limit} वीडियो शामिल हैं। सशुल्क योजनाएं जल्द आ रही हैं।",
         "error_duration_title": "वीडियो बहुत लंबा है",
         "error_duration_body": "मुफ़्त योजना में {max_min} मिनट तक के वीडियो चलते हैं। एक छोटा क्लिप आज़माएं।",
+        "login_google": "Google से साइन इन करें",
+        "logout": "साइन आउट करें",
+        "login_prompt": "अपना वीडियो अपलोड करने के लिए Google से साइन इन करें।",
         "footer": "Subly, Nexi Digital द्वारा बनाया गया है।",
     },
     "zh": {
@@ -433,6 +460,9 @@ UI_STRINGS = {
         "error_limit_body": "免费计划每月包含 {limit} 个视频。付费计划即将推出。",
         "error_duration_title": "视频太长",
         "error_duration_body": "免费计划支持最长 {max_min} 分钟的视频。请尝试更短的片段。",
+        "login_google": "使用 Google 登录",
+        "logout": "退出登录",
+        "login_prompt": "使用 Google 登录后即可上传视频。",
         "footer": "Subly 由 Nexi Digital 开发。",
     },
     "ja": {
@@ -471,6 +501,9 @@ UI_STRINGS = {
         "error_limit_body": "無料プランは月に{limit}本まで利用できます。有料プランは近日公開予定です。",
         "error_duration_title": "動画が長すぎます",
         "error_duration_body": "無料プランは最大{max_min}分の動画に対応しています。短い動画をお試しください。",
+        "login_google": "Googleでログイン",
+        "logout": "ログアウト",
+        "login_prompt": "動画をアップロードするにはGoogleでログインしてください。",
         "footer": "Subly は Nexi Digital が開発しています。",
     },
     "ko": {
@@ -509,6 +542,9 @@ UI_STRINGS = {
         "error_limit_body": "무료 플랜은 월 {limit}개의 동영상을 제공합니다. 유료 플랜이 곧 출시됩니다.",
         "error_duration_title": "동영상이 너무 깁니다",
         "error_duration_body": "무료 플랜은 최대 {max_min}분 동영상을 지원합니다. 더 짧은 클립을 시도해 보세요.",
+        "login_google": "Google로 로그인",
+        "logout": "로그아웃",
+        "login_prompt": "동영상을 업로드하려면 Google로 로그인하세요.",
         "footer": "Subly는 Nexi Digital이 개발했습니다.",
     },
     "ru": {
@@ -547,6 +583,9 @@ UI_STRINGS = {
         "error_limit_body": "Бесплатный план включает {limit} видео в месяц. Платные планы скоро появятся.",
         "error_duration_title": "Видео слишком длинное",
         "error_duration_body": "Бесплатный план поддерживает видео до {max_min} минут. Попробуйте более короткий ролик.",
+        "login_google": "Войти через Google",
+        "logout": "Выйти",
+        "login_prompt": "Войдите через Google, чтобы загрузить видео.",
         "footer": "Subly разработан Nexi Digital.",
     },
     "id": {
@@ -585,6 +624,9 @@ UI_STRINGS = {
         "error_limit_body": "Paket gratis mencakup {limit} video per bulan. Paket berbayar segera hadir.",
         "error_duration_title": "Video terlalu panjang",
         "error_duration_body": "Paket gratis mendukung video hingga {max_min} menit. Coba klip yang lebih pendek.",
+        "login_google": "Masuk dengan Google",
+        "logout": "Keluar",
+        "login_prompt": "Masuk dengan Google untuk mengunggah videomu.",
         "footer": "Subly dikembangkan oleh Nexi Digital.",
     },
 }

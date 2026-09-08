@@ -26,7 +26,7 @@ def _connect():
 
 
 def init_db() -> None:
-    """usage tablosu yoksa olusturur. Uygulama baslarken bir kez cagrilir."""
+    """usage ve users tablolari yoksa olusturur. Uygulama baslarken bir kez cagrilir."""
     with _connect() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -36,6 +36,27 @@ def init_db() -> None:
                     count INTEGER NOT NULL DEFAULT 0
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    email TEXT PRIMARY KEY,
+                    name TEXT,
+                    picture TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+        conn.commit()
+
+
+def upsert_user(email: str, name: str, picture: str) -> None:
+    """Google ile giris yapan kullaniciyi kaydeder/gunceller (isim, foto)."""
+    key = email.lower()
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO users (email, name, picture)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, picture = EXCLUDED.picture
+            """, (key, name, picture))
         conn.commit()
 
 

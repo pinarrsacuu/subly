@@ -6,20 +6,24 @@ Calistirmak icin: python app.py
 Sonra tarayicidan: http://localhost:5001
 """
 
+import os
 import uuid
 from pathlib import Path
 
-from flask import Flask, request, render_template_string, send_from_directory
+from flask import Flask, request, render_template_string, send_from_directory, session, redirect, url_for
 
+from auth import oauth, init_auth
 from transcribe import extract_audio, transcribe, write_srt
 from burn_captions import burn
 from translate import translate_segments, LANGUAGES
 from ui_strings import get_ui_language, get_ui_strings, get_client_ip, RTL_LANGS
 from video_utils import get_duration_seconds
-from usage_tracker import get_remaining, record_usage, init_db, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
+from usage_tracker import get_remaining, record_usage, init_db, upsert_user, FREE_MONTHLY_LIMIT, FREE_MAX_DURATION_SECONDS
 
 app = Flask(__name__)
+app.secret_key = os.environ["SECRET_KEY"]
 init_db()
+init_auth(app)
 
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
@@ -78,7 +82,11 @@ BRAND_HEAD = """
   .contentRow .step { text-align: left; }
   .contentRow .sectionTitle { text-align: left; }
 
-  nav.top { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; }
+  nav.top { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; flex-wrap: wrap; gap: 12px; }
+  .userBox { display: flex; align-items: center; gap: 10px; }
+  .userAvatar { width: 30px; height: 30px; border-radius: 50%; display: block; }
+  .userName { font-size: 0.85rem; color: var(--ink-soft); }
+  .navLogin { margin-top: 0; padding: 9px 18px; font-size: 0.85rem; }
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand .mark { width: 40px; height: 40px; flex: none; display: block; }
   .brand .names { display: flex; flex-direction: column; line-height: 1.15; }
@@ -230,6 +238,15 @@ NAV = f"""
       <span class="by">Nexi Digital</span>
     </div>
   </div>
+  {{% if user %}}
+    <div class="userBox">
+      <img class="userAvatar" src="{{{{ user.picture }}}}" alt="">
+      <span class="userName">{{{{ user.name }}}}</span>
+      <a href="/logout" class="btnGhost">{{{{ t.logout }}}}</a>
+    </div>
+  {{% else %}}
+    <a href="/login/google" class="btnHero navLogin">{{{{ t.login_google }}}}</a>
+  {{% endif %}}
 </nav>
 """
 
@@ -269,20 +286,23 @@ UPLOAD_FORM = f"""
 <div class="heroOuter contentSection">
   <div class="splitRow contentRow">
     <div class="half card" id="uploadForm">
-      <form action="/process" method="post" enctype="multipart/form-data">
-        <label for="video">{{{{ t.label_video }}}}</label>
-        <input type="file" id="video" name="video" accept="video/*" required>
-        <label for="language">{{{{ t.label_language }}}}</label>
-        <select name="language" id="language">
-          {{% for value, label in languages %}}
-            <option value="{{{{ value }}}}">{{{{ label }}}}</option>
-          {{% endfor %}}
-        </select>
-        <label for="email">{{{{ t.label_email }}}}</label>
-        <input type="email" id="email" name="email" required>
-        <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
-        <p class="formNote">{{{{ t.free_note|safe }}}}</p>
-      </form>
+      {{% if user %}}
+        <form action="/process" method="post" enctype="multipart/form-data">
+          <label for="video">{{{{ t.label_video }}}}</label>
+          <input type="file" id="video" name="video" accept="video/*" required>
+          <label for="language">{{{{ t.label_language }}}}</label>
+          <select name="language" id="language">
+            {{% for value, label in languages %}}
+              <option value="{{{{ value }}}}">{{{{ label }}}}</option>
+            {{% endfor %}}
+          </select>
+          <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
+          <p class="formNote">{{{{ t.free_note|safe }}}}</p>
+        </form>
+      {{% else %}}
+        <p class="lede">{{{{ t.login_prompt }}}}</p>
+        <a href="/login/google" class="btnPrimary">{{{{ t.login_google }}}}</a>
+      {{% endif %}}
     </div>
 
     <div class="half stepsPanel">
@@ -383,12 +403,39 @@ ERROR_PAGE = f"""
 """
 
 
+@app.route("/login/google")
+def login_google():
+    redirect_uri = url_for("login_google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@app.route("/login/google/callback")
+def login_google_callback():
+    token = oauth.google.authorize_access_token()
+    userinfo = token["userinfo"]
+    session["user"] = {
+        "email": userinfo["email"],
+        "name": userinfo.get("name") or userinfo["email"],
+        "picture": userinfo.get("picture", ""),
+    }
+    upsert_user(userinfo["email"], session["user"]["name"], session["user"]["picture"])
+    return redirect(url_for("index"))
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("index"))
+
+
 @app.route("/")
 def index():
     lang = get_ui_language(request.accept_languages, get_client_ip(request))
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
-    return render_template_string(UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction)
+    return render_template_string(
+        UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction, user=session.get("user"),
+    )
 
 
 @app.route("/process", methods=["POST"])
@@ -396,17 +443,21 @@ def process():
     lang = get_ui_language(request.accept_languages, get_client_ip(request))
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
+    user = session.get("user")
+
+    if not user:
+        return redirect(url_for("index"))
 
     uploaded = request.files["video"]
     target_language = request.form.get("language", "original")
-    email = request.form.get("email", "").strip()
+    email = user["email"]
     job_id = uuid.uuid4().hex[:8]
 
     # Ucretsiz plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
     # bakiyoruz ki API maliyetine hic girmeyelim.
     if get_remaining(email) <= 0:
         return render_template_string(
-            ERROR_PAGE, t=t, lang=lang, dir=direction,
+            ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_limit_title"],
             error_body=t["error_limit_body"].format(limit=FREE_MONTHLY_LIMIT),
         )
@@ -419,7 +470,7 @@ def process():
     if duration > FREE_MAX_DURATION_SECONDS:
         video_path.unlink()
         return render_template_string(
-            ERROR_PAGE, t=t, lang=lang, dir=direction,
+            ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_duration_title"],
             error_body=t["error_duration_body"].format(max_min=FREE_MAX_DURATION_SECONDS / 60),
         )
@@ -438,7 +489,7 @@ def process():
 
     record_usage(email)
 
-    return render_template_string(RESULT_PAGE, filename=output_filename, t=t, lang=lang, dir=direction)
+    return render_template_string(RESULT_PAGE, filename=output_filename, t=t, lang=lang, dir=direction, user=user)
 
 
 @app.route("/outputs/<path:filename>")
