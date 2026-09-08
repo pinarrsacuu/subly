@@ -99,7 +99,12 @@ BRAND_HEAD = """
   .userBox { display: flex; align-items: center; gap: 10px; }
   .userAvatar { width: 30px; height: 30px; border-radius: 50%; display: block; }
   .userName { font-size: 0.85rem; color: var(--ink-soft); }
-  .navLogin { margin-top: 0; padding: 9px 18px; font-size: 0.85rem; }
+  .navActions { display: flex; align-items: center; gap: 10px; }
+  .btnGhostNav {
+    color: var(--ink); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+    padding: 9px 14px; border-radius: 999px; transition: background 0.15s ease;
+  }
+  .btnGhostNav:hover { background: var(--surface); }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
   .brand .mark { width: 40px; height: 40px; flex: none; display: block; }
   .brand .names { display: flex; flex-direction: column; line-height: 1.15; }
@@ -188,6 +193,21 @@ BRAND_HEAD = """
   .btnHero:hover { transform: translateY(-2px); box-shadow: 0 20px 38px -12px rgba(214, 69, 92, 0.65); }
   .navLogin { padding: 10px 20px; font-size: 0.88rem; margin-top: 0; box-shadow: none; }
   .navLogin:hover { box-shadow: 0 10px 20px -10px rgba(214, 69, 92, 0.55); }
+
+  /* Iki katmanli hero butonu (Submagic'in "Get Started Now [Try for free]"
+     tarzi) - disi koyu, icindeki rozet coral renginde vurgu yapiyor. */
+  .btnNested {
+    display: inline-flex; align-items: center; gap: 12px; margin-top: 22px;
+    background: var(--ink); color: #fff; border: none; cursor: pointer;
+    padding: 8px 8px 8px 24px; border-radius: 999px; font: inherit; font-size: 1rem; font-weight: 700;
+    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 16px 32px -14px rgba(0, 0, 0, 0.45);
+  }
+  .btnNested:hover { transform: translateY(-2px); box-shadow: 0 20px 38px -14px rgba(0, 0, 0, 0.55); }
+  .btnNestedBadge {
+    background: var(--coral); color: #fff; padding: 11px 20px; border-radius: 999px;
+    font-size: 0.88rem; font-weight: 700; white-space: nowrap;
+  }
 
   .badge {
     display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, monospace;
@@ -342,7 +362,10 @@ NAV = f"""
       <a href="/logout" class="btnGhost">{{{{ t.logout }}}}</a>
     </div>
   {{% else %}}
-    <a href="/login/google" class="btnHero navLogin">{{{{ t.login_google }}}}</a>
+    <div class="navActions">
+      <a href="/login/google" class="btnGhostNav">{{{{ t.nav_login }}}}</a>
+      <a href="/login/google" class="btnHero navLogin">{{{{ t.nav_cta }}}}</a>
+    </div>
   {{% endif %}}
 </nav>
 """
@@ -364,7 +387,10 @@ UPLOAD_FORM = f"""
         <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
         <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
         <p class="lede">{{{{ t.lede }}}}</p>
-        <a href="#uploadForm" class="btnHero">{{{{ t.cta_scroll }}}}</a>
+        <a href="#uploadForm" class="btnNested">
+          {{{{ t.hero_cta_outer }}}}
+          <span class="btnNestedBadge">{{{{ t.hero_cta_badge }}}}</span>
+        </a>
         <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
       </div>
 
