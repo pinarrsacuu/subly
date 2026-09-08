@@ -99,7 +99,7 @@ BRAND_HEAD = """
   .userAvatar { width: 30px; height: 30px; border-radius: 50%; display: block; }
   .userName { font-size: 0.85rem; color: var(--ink-soft); }
   .navLogin { margin-top: 0; padding: 9px 18px; font-size: 0.85rem; }
-  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
   .brand .mark { width: 40px; height: 40px; flex: none; display: block; }
   .brand .names { display: flex; flex-direction: column; line-height: 1.15; }
   .brand .product { font-family: Georgia, serif; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.01em; }
@@ -263,13 +263,13 @@ LOGO_SVG = """
 
 NAV = f"""
 <nav class="top">
-  <div class="brand">
+  <a class="brand" href="/">
     {LOGO_SVG}
     <div class="names">
       <span class="product">Subly</span>
       <span class="by">Nexi Digital</span>
     </div>
-  </div>
+  </a>
   {{% if user %}}
     <div class="userBox">
       <img class="userAvatar" src="{{{{ user.picture }}}}" alt="">
