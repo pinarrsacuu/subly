@@ -199,7 +199,7 @@ BRAND_HEAD = """
      tarzi) - disi koyu, icindeki rozet coral renginde vurgu yapiyor. */
   .btnNested {
     display: inline-flex; align-items: center; gap: 14px; margin-top: 24px;
-    background: var(--ink); color: #fff; border: none; cursor: pointer;
+    background: #241B2E; color: #fff; border: none; cursor: pointer;
     padding: 9px 9px 9px 28px; border-radius: 999px; font: inherit; font-size: 1.08rem; font-weight: 800;
     text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
     box-shadow: 0 20px 44px -16px rgba(0, 0, 0, 0.55), 0 0 0 6px var(--coral-soft);
