@@ -128,6 +128,36 @@ BRAND_HEAD = """
   }
   select:focus, input:focus { border-color: var(--coral); }
 
+  .checkboxRow {
+    display: flex; align-items: center; gap: 8px; margin: 18px 0 4px;
+    font-size: 0.86rem; color: var(--ink); cursor: pointer;
+  }
+  .checkboxRow input { width: auto; margin: 0; }
+  .checkboxHint { margin: 0 0 4px; font-size: 0.76rem; color: var(--ink-soft); }
+  .subsPreview { margin: 10px 0 4px; }
+  .subsPreviewTag {
+    display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--ink-soft); margin-bottom: 6px;
+  }
+  .subsPreviewFrame {
+    position: relative; height: 84px; border-radius: 10px; overflow: hidden;
+    background: linear-gradient(135deg, #3a2d47, #241b2e);
+  }
+  .subsPreviewOld, .subsPreviewNew {
+    position: absolute; left: 0; right: 0; text-align: center;
+    font-size: 0.78rem; font-weight: 600; color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  }
+  .subsPreviewOld { bottom: 22px; transition: opacity 0.2s ease; }
+  .subsPreviewNew { bottom: 10px; }
+  .subsPreviewBar {
+    position: absolute; left: 0; right: 0; bottom: 4px; height: 26px;
+    background: rgba(15, 12, 20, 0.94); border-radius: 4px;
+    opacity: 0; transition: opacity 0.2s ease;
+  }
+  .subsPreview.covered .subsPreviewOld { opacity: 0; }
+  .subsPreview.covered .subsPreviewBar { opacity: 1; }
+
   .btnPrimary {
     background: var(--ink); color: var(--paper); border: none; cursor: pointer;
     padding: 13px 28px; border-radius: 999px; font: inherit; font-size: 0.95rem; font-weight: 600;
@@ -345,9 +375,40 @@ UPLOAD_FORM = f"""
               <option value="{{{{ value }}}}">{{{{ label }}}}</option>
             {{% endfor %}}
           </select>
+
+          <label class="checkboxRow" for="coverSubs">
+            <input type="checkbox" id="coverSubs" name="cover_subs" onchange="toggleSubsPreview(this)">
+            {{{{ t.cover_subs_label }}}}
+          </label>
+          <p class="checkboxHint">{{{{ t.cover_subs_hint }}}}</p>
+
+          <div class="subsPreview" id="subsPreviewBox">
+            <div class="subsPreviewCol">
+              <span class="subsPreviewTag" id="subsPreviewTag">{{{{ t.cover_subs_before }}}}</span>
+              <div class="subsPreviewFrame">
+                <span class="subsPreviewOld">こんにちは</span>
+                <span class="subsPreviewBar"></span>
+                <span class="subsPreviewNew">Hola, ¿qué tal?</span>
+              </div>
+            </div>
+          </div>
+
           <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
           <p class="formNote">{{{{ t.free_note|safe }}}}</p>
         </form>
+        <script>
+          function toggleSubsPreview(cb) {{
+            var box = document.getElementById("subsPreviewBox");
+            var tag = document.getElementById("subsPreviewTag");
+            if (cb.checked) {{
+              box.classList.add("covered");
+              tag.textContent = "{{{{ t.cover_subs_after }}}}";
+            }} else {{
+              box.classList.remove("covered");
+              tag.textContent = "{{{{ t.cover_subs_before }}}}";
+            }}
+          }}
+        </script>
       {{% else %}}
         <p class="lede">{{{{ t.login_prompt }}}}</p>
         <a href="/login/google" class="btnPrimary">{{{{ t.login_google }}}}</a>
@@ -567,6 +628,7 @@ def process():
 
     uploaded = request.files["video"]
     target_language = request.form.get("language", "original")
+    cover_subs = request.form.get("cover_subs") == "on"
     email = user["email"]
     file_id = uuid.uuid4().hex[:8]
     limits = PLAN_LIMITS[get_user_plan(email)]
@@ -600,7 +662,7 @@ def process():
     status_url = url_for("job_status", job_id=job_id, _external=True)
     thread = threading.Thread(
         target=run_job,
-        args=(job_id, file_id, video_path, target_language, email, status_url, t),
+        args=(job_id, file_id, video_path, target_language, cover_subs, email, status_url, t),
         daemon=True,
     )
     thread.start()
@@ -608,7 +670,7 @@ def process():
     return redirect(url_for("job_status", job_id=job_id))
 
 
-def run_job(job_id, file_id, video_path, target_language, email, status_url, t):
+def run_job(job_id, file_id, video_path, target_language, cover_subs, email, status_url, t):
     mark_processing(job_id)
     try:
         audio_path = extract_audio(video_path)
@@ -621,7 +683,7 @@ def run_job(job_id, file_id, video_path, target_language, email, status_url, t):
 
         output_filename = f"{file_id}_captioned.mp4"
         output_path = OUTPUT_DIR / output_filename
-        burn(video_path, srt_path, output_path)
+        burn(video_path, srt_path, output_path, cover_subs=cover_subs)
         video_path.unlink()
         srt_path.unlink()
 
