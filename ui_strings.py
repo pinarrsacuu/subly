@@ -104,6 +104,7 @@ UI_STRINGS = {
         "processing_error_title": "Something went wrong",
         "processing_error_body": "We couldn't process your video due to an unexpected error. Please try again, or reach out if this keeps happening.",
         "pricing_premium_desc": "10 videos a month, up to 15 minutes each — still no watermark.",
+        "trust_note": "🔒 HTTPS-encrypted connection. Google sign-in means we never see or store a password. Videos are deleted from our servers automatically after processing.",
         "footer": "Subly is built by Nexi Digital.",
     },
     "es": {
@@ -155,6 +156,7 @@ UI_STRINGS = {
         "processing_error_title": "Algo salió mal",
         "processing_error_body": "No pudimos procesar tu video debido a un error inesperado. Intenta de nuevo, o contáctanos si esto persiste.",
         "pricing_premium_desc": "10 videos al mes, hasta 15 minutos cada uno — sigue sin marca de agua.",
+        "trust_note": "🔒 Conexion cifrada (HTTPS). Con el inicio de sesion de Google nunca vemos ni guardamos una contrasena. Los videos se eliminan automaticamente de nuestros servidores tras el procesamiento.",
         "footer": "Subly esta construido por Nexi Digital.",
     },
     "pt": {
@@ -206,6 +208,7 @@ UI_STRINGS = {
         "processing_error_title": "Algo deu errado",
         "processing_error_body": "Não conseguimos processar seu vídeo devido a um erro inesperado. Tente novamente, ou entre em contato se isso persistir.",
         "pricing_premium_desc": "10 vídeos por mês, até 15 minutos cada — ainda sem marca d'água.",
+        "trust_note": "🔒 Conexao criptografada (HTTPS). Com o login do Google, nunca vemos nem guardamos uma senha. Os videos sao excluidos automaticamente dos nossos servidores apos o processamento.",
         "footer": "Subly e desenvolvido pela Nexi Digital.",
     },
     "fr": {
@@ -257,6 +260,7 @@ UI_STRINGS = {
         "processing_error_title": "Un problème est survenu",
         "processing_error_body": "Nous n'avons pas pu traiter votre vidéo en raison d'une erreur inattendue. Veuillez réessayer, ou nous contacter si cela persiste.",
         "pricing_premium_desc": "10 vidéos par mois, jusqu'à 15 minutes chacune — toujours sans filigrane.",
+        "trust_note": "🔒 Connexion chiffree (HTTPS). Avec la connexion Google, nous ne voyons ni ne stockons jamais de mot de passe. Les videos sont supprimees automatiquement de nos serveurs apres le traitement.",
         "footer": "Subly est developpe par Nexi Digital.",
     },
     "de": {
@@ -308,6 +312,7 @@ UI_STRINGS = {
         "processing_error_title": "Etwas ist schiefgelaufen",
         "processing_error_body": "Wir konnten dein Video aufgrund eines unerwarteten Fehlers nicht verarbeiten. Bitte versuch es erneut oder melde dich, falls das weiterhin passiert.",
         "pricing_premium_desc": "10 Videos pro Monat, je bis zu 15 Minuten — weiterhin ohne Wasserzeichen.",
+        "trust_note": "🔒 Verschlusselte Verbindung (HTTPS). Durch die Google-Anmeldung sehen oder speichern wir niemals ein Passwort. Videos werden nach der Verarbeitung automatisch von unseren Servern geloscht.",
         "footer": "Subly wird von Nexi Digital entwickelt.",
     },
     "it": {
@@ -359,6 +364,7 @@ UI_STRINGS = {
         "processing_error_title": "Qualcosa è andato storto",
         "processing_error_body": "Non siamo riusciti a elaborare il tuo video a causa di un errore imprevisto. Riprova, oppure contattaci se il problema persiste.",
         "pricing_premium_desc": "10 video al mese, fino a 15 minuti ciascuno — sempre senza filigrana.",
+        "trust_note": "🔒 Connessione crittografata (HTTPS). Con l'accesso Google non vediamo ne conserviamo mai una password. I video vengono eliminati automaticamente dai nostri server dopo l'elaborazione.",
         "footer": "Subly e sviluppato da Nexi Digital.",
     },
     "tr": {
@@ -410,6 +416,7 @@ UI_STRINGS = {
         "processing_error_title": "Bir seyler ters gitti",
         "processing_error_body": "Videonu islerken beklenmedik bir hata olustu. Lutfen tekrar dene, sorun devam ederse bize ulas.",
         "pricing_premium_desc": "Ayda 10 video, video basina 15 dakikaya kadar — yine watermark'siz.",
+        "trust_note": "🔒 Baglantin sifreli (HTTPS). Google ile giris yaptigin icin sifreni hicbir zaman gormuyor ya da saklamiyoruz. Videolar islem bitince sunucularimizdan otomatik olarak siliniyor.",
         "footer": "Subly, Nexi Digital tarafindan gelistirilmistir.",
     },
     "ar": {
@@ -461,6 +468,7 @@ UI_STRINGS = {
         "processing_error_title": "حدث خطأ ما",
         "processing_error_body": "لم نتمكن من معالجة فيديوك بسبب خطأ غير متوقع. يرجى المحاولة مرة أخرى، أو التواصل معنا إذا استمرت المشكلة.",
         "pricing_premium_desc": "10 فيديو شهريًا، حتى 15 دقيقة لكل منها — لا تزال بدون علامة مائية.",
+        "trust_note": "🔒 اتصال مشفر (HTTPS). بفضل تسجيل الدخول عبر Google، لا نرى كلمة المرور الخاصة بك أبدًا ولا نخزنها. يتم حذف الفيديوهات تلقائيًا من خوادمنا بعد المعالجة.",
         "footer": "تم تطوير Subly بواسطة Nexi Digital.",
     },
     "hi": {
@@ -512,6 +520,7 @@ UI_STRINGS = {
         "processing_error_title": "कुछ गलत हो गया",
         "processing_error_body": "अनपेक्षित त्रुटि के कारण हम आपका वीडियो प्रोसेस नहीं कर सके। कृपया दोबारा कोशिश करें, या यह जारी रहने पर हमसे संपर्क करें।",
         "pricing_premium_desc": "महीने में 10 वीडियो, हर एक 15 मिनट तक — फिर भी वॉटरमार्क-मुक्त।",
+        "trust_note": "🔒 आपका कनेक्शन एन्क्रिप्टेड (HTTPS) है। Google साइन-इन के कारण हम कभी भी पासवर्ड नहीं देखते या सहेजते। प्रोसेसिंग के बाद वीडियो हमारे सर्वर से अपने आप हटा दिए जाते हैं।",
         "footer": "Subly, Nexi Digital द्वारा बनाया गया है।",
     },
     "zh": {
@@ -563,6 +572,7 @@ UI_STRINGS = {
         "processing_error_title": "出了点问题",
         "processing_error_body": "由于意外错误，我们无法处理你的视频。请重试，如果问题持续存在，请联系我们。",
         "pricing_premium_desc": "每月 10 个视频，每个最长 15 分钟 — 依然无水印。",
+        "trust_note": "🔒 连接已加密 (HTTPS)。通过 Google 登录，我们从不查看或存储密码。视频在处理完成后会自动从我们的服务器上删除。",
         "footer": "Subly 由 Nexi Digital 开发。",
     },
     "ja": {
@@ -614,6 +624,7 @@ UI_STRINGS = {
         "processing_error_title": "問題が発生しました",
         "processing_error_body": "予期しないエラーにより動画を処理できませんでした。もう一度お試しいただくか、問題が続く場合はご連絡ください。",
         "pricing_premium_desc": "月に10本、1本あたり最大15分 — 引き続き透かしなし。",
+        "trust_note": "🔒 接続は暗号化されています（HTTPS）。Googleログインを利用しているため、パスワードを見たり保存したりすることはありません。動画は処理後、サーバーから自動的に削除されます。",
         "footer": "Subly は Nexi Digital が開発しています。",
     },
     "ko": {
@@ -665,6 +676,7 @@ UI_STRINGS = {
         "processing_error_title": "문제가 발생했습니다",
         "processing_error_body": "예기치 않은 오류로 동영상을 처리하지 못했습니다. 다시 시도하시거나 문제가 계속되면 문의해 주세요.",
         "pricing_premium_desc": "월 10개 동영상, 각 최대 15분 — 여전히 워터마크 없음.",
+        "trust_note": "🔒 연결은 암호화되어 있습니다 (HTTPS). Google 로그인을 사용하므로 비밀번호를 보거나 저장하지 않습니다. 동영상은 처리 후 서버에서 자동으로 삭제됩니다.",
         "footer": "Subly는 Nexi Digital이 개발했습니다.",
     },
     "ru": {
@@ -716,6 +728,7 @@ UI_STRINGS = {
         "processing_error_title": "Что-то пошло не так",
         "processing_error_body": "Не удалось обработать ваше видео из-за непредвиденной ошибки. Попробуйте ещё раз или свяжитесь с нами, если проблема повторится.",
         "pricing_premium_desc": "10 видео в месяц, до 15 минут каждое — по-прежнему без водяного знака.",
+        "trust_note": "🔒 Соединение зашифровано (HTTPS). Благодаря входу через Google мы никогда не видим и не храним пароль. Видео автоматически удаляются с наших серверов после обработки.",
         "footer": "Subly разработан Nexi Digital.",
     },
     "id": {
@@ -767,6 +780,7 @@ UI_STRINGS = {
         "processing_error_title": "Ada yang tidak beres",
         "processing_error_body": "Kami tidak bisa memproses videomu karena kesalahan tak terduga. Coba lagi, atau hubungi kami jika masalah ini berlanjut.",
         "pricing_premium_desc": "10 video per bulan, masing-masing hingga 15 menit — tetap tanpa watermark.",
+        "trust_note": "🔒 Koneksi terenkripsi (HTTPS). Dengan login Google, kami tidak pernah melihat atau menyimpan kata sandi. Video dihapus secara otomatis dari server kami setelah diproses.",
         "footer": "Subly dikembangkan oleh Nexi Digital.",
     },
 }

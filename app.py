@@ -203,7 +203,19 @@ BRAND_HEAD = """
   .planGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .planCard {
     background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-    padding: 22px; position: relative;
+    padding: 22px; position: relative; cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .planCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -12px rgba(36, 27, 46, 0.25);
+  }
+  .planCard.selected {
+    border-color: var(--coral); box-shadow: 0 12px 28px -14px rgba(214, 69, 92, 0.4);
+  }
+  .planCard.selected::after {
+    content: "✓"; position: absolute; top: 14px; right: 16px;
+    color: var(--coral); font-weight: 700;
   }
   .planCard h3 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 1.05rem; }
   .planPrice { font-size: 1.6rem; font-weight: 700; margin: 0 0 10px; }
@@ -217,6 +229,11 @@ BRAND_HEAD = """
   }
   @media (max-width: 560px) {
     .planGrid { grid-template-columns: 1fr; }
+  }
+
+  .trustNote {
+    margin: 18px auto 0; max-width: 640px; text-align: center;
+    font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5;
   }
 
   .faq { margin: 56px 0 8px; }
@@ -364,25 +381,37 @@ UPLOAD_FORM = f"""
   <div class="pricing">
     <h2 class="sectionTitle">{{{{ t.pricing_title }}}}</h2>
     <div class="planGrid">
-      <div class="planCard">
+      <div class="planCard" data-plan="free" onclick="selectPlan(this, true)">
         <h3>Free</h3>
         <p class="planPrice">$0</p>
         <p>{{{{ t.free_note|safe }}}}</p>
       </div>
-      <div class="planCard planPro">
+      <div class="planCard planPro" data-plan="pro" onclick="selectPlan(this, false)">
         <span class="planBadge">{{{{ t.pricing_soon }}}}</span>
         <h3>Pro</h3>
         <p class="planPrice">&#8378;{{{{ pro_price }}}}<span>{{{{ t.per_month }}}}</span></p>
         <p>{{{{ t.pricing_pro_desc }}}}</p>
       </div>
-      <div class="planCard planPro">
+      <div class="planCard planPro" data-plan="premium" onclick="selectPlan(this, false)">
         <span class="planBadge">{{{{ t.pricing_soon }}}}</span>
         <h3>Premium</h3>
         <p class="planPrice">&#8378;{{{{ premium_price }}}}<span>{{{{ t.per_month }}}}</span></p>
         <p>{{{{ t.pricing_premium_desc }}}}</p>
       </div>
     </div>
+    <p class="trustNote">{{{{ t.trust_note }}}}</p>
   </div>
+
+  <script>
+    function selectPlan(card, scrollToForm) {{
+      document.querySelectorAll(".planCard").forEach(function (c) {{ c.classList.remove("selected"); }});
+      card.classList.add("selected");
+      if (scrollToForm) {{
+        var form = document.getElementById("uploadForm");
+        if (form) form.scrollIntoView({{ behavior: "smooth", block: "center" }});
+      }}
+    }}
+  </script>
 
   <div class="faq">
     <h2 class="sectionTitle">{{{{ t.faq_title }}}}</h2>
@@ -593,6 +622,8 @@ def run_job(job_id, file_id, video_path, target_language, email, status_url, t):
         output_filename = f"{file_id}_captioned.mp4"
         output_path = OUTPUT_DIR / output_filename
         burn(video_path, srt_path, output_path)
+        video_path.unlink()
+        srt_path.unlink()
 
         record_usage(email)
         mark_done(job_id, output_filename)
