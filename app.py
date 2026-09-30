@@ -43,336 +43,385 @@ OUTPUT_DIR = Path("outputs")
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Nexi Digital marka kimligi: renkler, fontlar, logo mark'i mevcut kurumsal
-# siteden (Nexi Digital) alindi, boylece Subly ayni ailenin bir urunu gibi durur.
+# Nexi Digital marka kimligi (2026-09-30 yenilemesi): nexidigitalai.com ile ayni
+# renkler (kobalt + mandalina + gunes sarisi), ayni fontlar (Unbounded + Hanken
+# Grotesk) ve ayni dugum-N logo. Boylece Subly ayni ailenin bir urunu gibi durur.
+# Not: bu metin Jinja tarafindan da islenir; icinde suslu parantez + diyez yan yana
+# (Jinja yorum isareti) ya da cift suslu parantez kullanma.
 BRAND_HEAD = """
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..800&family=Unbounded:wght@500..700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230B1024'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='.2' stop-color='%234A67FF'/%3E%3Cstop offset='.8' stop-color='%23FF7A3D'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M28 24v52M28 24l44 52M72 24v52' stroke='%23fff' stroke-opacity='.42' stroke-width='7' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='28' cy='24' r='10' fill='%234A67FF'/%3E%3Ccircle cx='28' cy='76' r='10' fill='%234A67FF'/%3E%3Ccircle cx='72' cy='24' r='10' fill='%23FF7A3D'/%3E%3Ccircle cx='72' cy='76' r='10' fill='%23FF7A3D'/%3E%3Ccircle cx='50' cy='50' r='12' fill='url(%23g)'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#F5F6FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1024" media="(prefers-color-scheme: dark)">
 <style>
   :root {
-    --paper: #F1ECE6;
-    --ink: #241B2E;
-    --ink-soft: #6B5F72;
-    --coral: #D6455C;
-    --coral-soft: rgba(214, 69, 92, 0.12);
-    --teal: #17948C;
-    --teal-soft: rgba(23, 148, 140, 0.12);
-    --surface: #FBF9F6;
-    --border: rgba(36, 27, 46, 0.14);
-    color-scheme: light dark;
+    --bg: #F5F6FA; --bg-2: #EAEDF5; --surface: #FFFFFF;
+    --ink: #0F1633; --ink-soft: #4E5775; --line: #DDE1EC;
+    --blue: #2E4BF0; --blue-hover: #2239CC; --blue-text: #2440DD;
+    --tang: #F26B2E; --tang-text: #B8480F; --sun: #FFC94D;
+    --scr: #0A0F24; --scr-2: #111936; --scr-line: rgba(236, 240, 255, 0.12); --scr-text: #EEF1FF; --scr-soft: #A9B2D6;
+    --shadow: 0 1px 2px rgba(15, 22, 51, 0.05), 0 20px 44px -26px rgba(30, 45, 120, 0.35);
+    --ease: cubic-bezier(.32, .72, 0, 1);
+    --spring: cubic-bezier(.34, 1.56, .64, 1);
+    --font: "Hanken Grotesk", -apple-system, "Segoe UI", "Noto Sans", sans-serif;
+    --display: "Unbounded", "Hanken Grotesk", -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper: #1A1420; --ink: #F3EFEF; --ink-soft: #B9AEC2;
-      --coral: #FF7C8E; --coral-soft: rgba(255, 124, 142, 0.14);
-      --teal: #3FD9CE; --teal-soft: rgba(63, 217, 206, 0.14);
-      --surface: #241B2E; --border: rgba(243, 239, 239, 0.14);
+      --bg: #0B1024; --bg-2: #0F1530; --surface: #151C3A;
+      --ink: #EEF1FF; --ink-soft: #A9B2D6; --line: rgba(238, 241, 255, 0.11);
+      --blue-text: #93A8FF; --tang-text: #FF9A63;
+      --scr: #070B1C; --scr-2: #0F1632;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 20px 44px -22px rgba(0, 0, 0, 0.8);
+      color-scheme: dark;
     }
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--paper); color: var(--ink);
-    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink);
+    font-family: var(--font); font-size: 1.0625rem; line-height: 1.6; -webkit-font-smoothing: antialiased;
   }
-  h1, h2 { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
-  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
-  .heroOuter { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
-  .splitRow { display: block; }
-  @media (min-width: 860px) {
-    .splitRow { display: flex; align-items: center; gap: 64px; }
-    .splitRow > .half { flex: 1 1 50%; min-width: 0; }
-  }
-  .heroBanner { padding: 44px 40px; }
-  .heroBanner .demoWrap { margin: 40px 0 0; }
-  @media (min-width: 860px) {
-    .heroBanner { padding: 56px; }
-    .heroBanner .demoWrap { margin: 0; }
-  }
-  .contentSection { margin-top: 64px; }
-  .contentRow { margin: 8px 0 0; }
-  .contentRow .stepsPanel { padding: 6px 0; }
-  .contentRow .stepGrid { grid-template-columns: 1fr; gap: 26px; }
-  .contentRow .step { text-align: left; }
-  .contentRow .sectionTitle { text-align: left; }
+  a { color: inherit; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  h1, h2 { font-family: var(--display); font-weight: 600; letter-spacing: -0.03em; }
+  p { margin: 0; text-wrap: pretty; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 8px; }
+  .shell { max-width: 1180px; margin: 0 auto; padding-inline: 28px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding-inline: 24px; }
 
-  nav.top { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; flex-wrap: wrap; gap: 12px; }
-  .userBox { display: flex; align-items: center; gap: 10px; }
-  .userAvatar { width: 30px; height: 30px; border-radius: 50%; display: block; }
-  .userName { font-size: 0.85rem; color: var(--ink-soft); }
-  .navActions { display: flex; align-items: center; gap: 10px; }
-  .btnGhostNav {
-    color: var(--ink); text-decoration: none; font-size: 0.88rem; font-weight: 600;
-    padding: 9px 18px; border-radius: 999px; border: 1.5px solid var(--border);
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .btnGhostNav:hover { background: var(--surface); border-color: var(--ink-soft); }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-  .brand .mark { width: 40px; height: 40px; flex: none; display: block; }
-  .brand .names { display: flex; flex-direction: column; line-height: 1.15; }
-  .brand .product { font-family: Georgia, serif; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.01em; }
-  .brand .by { font-size: 0.82rem; color: var(--ink-soft); }
+  /* ---------- Nav ---------- */
+  nav.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 22px 0; }
+  .brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); }
+  .brand .mark { width: 38px; height: 38px; flex: none; overflow: visible; }
+  .brand .names { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand .product { font-family: var(--display); font-weight: 600; font-size: 1.28rem; letter-spacing: -0.03em; }
+  .brand .by { font-size: 0.8rem; color: var(--ink-soft); }
+  .mk-line { stroke: var(--ink); stroke-opacity: 0.42; stroke-width: 6; stroke-linecap: round; fill: none; }
+  .mk-node { stroke: var(--bg); stroke-width: 4; paint-order: stroke; transform-box: fill-box; transform-origin: center; }
+  .mk-c { fill: #4A67FF; }
+  .mk-t { fill: #FF7A3D; }
+  .brand:hover .mk-c, .brand:hover .mk-t { animation: nodePop 0.6s var(--spring); }
+  .navActions, .userBox { display: flex; align-items: center; gap: 10px; }
+  .userAvatar { width: 32px; height: 32px; border-radius: 50%; display: block; }
+  .userName { font-size: 0.88rem; color: var(--ink-soft); }
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
-    padding: 36px 32px; box-shadow: 0 32px 64px -36px rgba(0,0,0,0.32);
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 46px; padding: 0 22px; border-radius: 999px; border: 0; cursor: pointer;
+    font: inherit; font-size: 0.95rem; font-weight: 600; text-decoration: none; white-space: nowrap;
+    transition: background-color 0.28s var(--ease), box-shadow 0.28s var(--ease), transform 0.28s var(--ease);
   }
-  .eyebrow {
-    font-family: ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--teal); margin: 0 0 14px; font-weight: 600;
-  }
-  @media (max-width: 420px) {
-    .eyebrow { font-size: 0.62rem; letter-spacing: 0.06em; }
-  }
-  h1.headline { font-size: clamp(1.9rem, 5.5vw, 2.7rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 14px; }
-  h1.headline em { font-style: italic; color: var(--coral); }
-  p.lede { color: var(--ink-soft); line-height: 1.55; margin: 0 0 30px; font-size: 1rem; }
+  .btn:active { transform: scale(0.98); }
+  .btnBlue { background: var(--blue); color: #fff; }
+  .btnBlue:hover { background: var(--blue-hover); box-shadow: 0 12px 28px -12px rgba(46, 75, 240, 0.7); }
+  .btnQuiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .btnQuiet:hover { box-shadow: inset 0 0 0 1px var(--ink-soft); }
+  .btnPrimary { margin-top: 24px; }
+  .btnGhost { color: var(--ink); text-decoration: none; font-size: 0.92rem; font-weight: 600; border-bottom: 1.5px solid var(--blue); padding-bottom: 2px; }
+  .btnGhost:hover { color: var(--blue-text); }
 
-  label { display: block; font-size: 0.82rem; color: var(--ink-soft); margin: 18px 0 8px; }
+  /* Button-in-button hero CTA */
+  .btnNested {
+    display: inline-flex; align-items: center; gap: 14px; margin-top: 34px;
+    background: var(--blue); color: #fff; text-decoration: none; font-weight: 700; font-size: 1.05rem;
+    padding: 7px 7px 7px 26px; border-radius: 999px;
+    box-shadow: 0 18px 40px -16px rgba(46, 75, 240, 0.75);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), background-color 0.3s var(--ease);
+  }
+  .btnNested:hover { background: var(--blue-hover); transform: translateY(-2px); }
+  .btnNested:active { transform: scale(0.98); }
+  .btnNestedBadge {
+    display: inline-flex; align-items: center; gap: 8px; background: var(--tang); color: #fff;
+    padding: 11px 20px; border-radius: 999px; font-size: 0.92rem; white-space: nowrap;
+    transition: transform 0.4s var(--spring);
+  }
+  .btnNested:hover .btnNestedBadge { transform: translateX(3px); }
+  .freeNote { margin-top: 18px; font-size: 0.9rem; color: var(--ink-soft); max-width: 46ch; }
+
+  /* ---------- Hero ---------- */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 56px; align-items: center; padding: 56px 0 24px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .chip { font-size: 0.84rem; font-weight: 600; color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); padding: 6px 13px; border-radius: 999px; }
+  .chip:nth-child(2) { color: var(--blue-text); }
+  h1.headline { font-size: clamp(2.1rem, 4.4vw, 3.6rem); line-height: 1.08; letter-spacing: -0.035em; }
+  h1.headline em { font-style: normal; color: #fff; background: var(--blue); padding: 0 0.18em; border-radius: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  h1.headline .h1sub { display: block; color: var(--ink-soft); font-size: 0.62em; letter-spacing: -0.02em; margin-top: 0.5em; line-height: 1.2; }
+  h1.headline .h1sub::first-letter { text-transform: uppercase; }
+  p.lede { color: var(--ink-soft); font-size: 1.15rem; max-width: 44ch; margin-top: 22px; }
+
+  /* Phone demo: an always-dark "screen" */
+  .demoWrap { display: flex; flex-direction: column; align-items: center; position: relative; }
+  .demoWrap::before {
+    content: ""; position: absolute; inset: -10% -14%; z-index: -1; pointer-events: none; filter: blur(24px);
+    background: radial-gradient(45% 40% at 35% 35%, color-mix(in srgb, var(--blue) 24%, transparent), transparent 70%),
+                radial-gradient(40% 40% at 70% 72%, color-mix(in srgb, var(--tang) 22%, transparent), transparent 70%);
+  }
+  .phone { width: min(300px, 78vw); padding: 7px; border-radius: 42px; background: color-mix(in srgb, var(--ink) 6%, transparent); box-shadow: inset 0 0 0 1px var(--line), var(--shadow); }
+  .demoFrame { position: relative; aspect-ratio: 9 / 16; border-radius: 35px; overflow: hidden; background: var(--scr); isolation: isolate; }
+  .blob { position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; filter: blur(34px); opacity: 0.85; z-index: -1; }
+  .blob.b1 { background: #3B55F0; top: 6%; left: -12%; animation: drift1 9s ease-in-out infinite alternate; }
+  .blob.b2 { background: #FF7A3D; bottom: 16%; right: -18%; animation: drift2 11s ease-in-out infinite alternate; }
+  .blob.b3 { background: #FFC94D; width: 40%; top: 42%; left: 30%; opacity: 0.45; animation: drift1 13s ease-in-out infinite alternate-reverse; }
+  .demoFrame::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(7, 11, 28, 0.1), rgba(7, 11, 28, 0.55)); }
+  .demoTime { position: absolute; top: 16px; inset-inline-start: 16px; background: rgba(7, 11, 28, 0.5); color: #fff; font-size: 0.74rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .demoPlay { position: absolute; top: 44%; left: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); display: grid; place-items: center; }
+  .demoPlay::after { content: ""; border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent #fff; margin-left: 4px; }
+  .demoCaption {
+    position: absolute; left: 16px; right: 16px; bottom: 58px; text-align: center; color: #fff;
+    font-family: var(--display); font-weight: 600; font-size: 1.02rem; line-height: 1.35; letter-spacing: -0.01em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45); min-height: 2.8em;
+  }
+  .demoCaption .cw { display: inline-block; padding: 0 0.12em; border-radius: 0.2em; transition: background-color 0.18s var(--ease), color 0.18s var(--ease), transform 0.3s var(--spring); }
+  .demoCaption .cw.on { background: var(--sun); color: #0F1633; text-shadow: none; transform: scale(1.06); }
+  .demoBar { position: absolute; left: 16px; right: 16px; bottom: 24px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); overflow: hidden; }
+  .demoBar i { display: block; height: 100%; width: 100%; background: #fff; transform-origin: left; transform: scaleX(0.35); }
+  .demoLabel { margin-top: 16px; font-size: 0.86rem; color: var(--ink-soft); }
+
+  /* ---------- Language ticker ---------- */
+  .ticker { margin-top: 64px; border-block: 1px solid var(--line); overflow: hidden; padding: 18px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .tickTrack { display: flex; width: max-content; animation: tick 40s linear infinite; }
+  [dir="rtl"] .tickTrack { animation-name: tickRtl; }
+  .ticker:hover .tickTrack { animation-play-state: paused; }
+  .tickSet { display: flex; align-items: center; gap: 34px; padding-inline-end: 34px; font-family: var(--display); font-weight: 500; font-size: clamp(1.05rem, 1.7vw, 1.35rem); letter-spacing: -0.02em; white-space: nowrap; }
+  .tickSet span:nth-child(4n+3) { color: var(--blue-text); }
+  .tickSet svg { width: 22px; height: 22px; flex: none; }
+
+  /* ---------- Upload + steps ---------- */
+  .contentSection { margin-top: 112px; }
+  .splitRow { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 64px; align-items: start; }
+  .card { background: var(--surface); border-radius: 24px; padding: 36px 34px; box-shadow: var(--shadow), inset 0 0 0 1px var(--line); }
+  .sectionTitle { font-size: clamp(1.6rem, 2.8vw, 2.3rem); line-height: 1.1; margin-bottom: 32px; }
+  .stepGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 30px; position: relative; }
+  .stepGrid::before { content: ""; position: absolute; top: 20px; bottom: 20px; inset-inline-start: 19px; width: 2px; background: linear-gradient(180deg, var(--blue), var(--tang)); opacity: 0.55; transform-origin: top; }
+  .step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 18px; align-items: start; }
+  .stepNum { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 2px var(--line), 0 0 0 6px var(--bg); position: relative; }
+  .step:first-child .stepNum { box-shadow: inset 0 0 0 2px var(--blue), 0 0 0 6px var(--bg); }
+  .step:last-child .stepNum { box-shadow: inset 0 0 0 2px var(--tang), 0 0 0 6px var(--bg); }
+  .step h3 { font-size: 1.12rem; font-weight: 700; padding-top: 7px; }
+  .step p { color: var(--ink-soft); font-size: 0.98rem; }
+
+  label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--ink); margin: 20px 0 8px; }
+  label:first-child { margin-top: 0; }
   input[type=file], input[type=email], select {
-    width: 100%; font: inherit; font-size: 0.95rem; color: var(--ink);
-    background: var(--paper); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 14px; outline: none;
+    width: 100%; font: inherit; font-size: 0.97rem; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-height: 50px; outline: none;
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
   }
-  select:focus, input:focus { border-color: var(--coral); }
-
-  .checkboxRow {
-    display: flex; align-items: center; gap: 8px; margin: 18px 0 4px;
-    font-size: 0.86rem; color: var(--ink); cursor: pointer;
-  }
-  .checkboxRow input { width: auto; margin: 0; }
-  .checkboxHint { margin: 0 0 4px; font-size: 0.76rem; color: var(--ink-soft); }
-  .subsPreview { margin: 10px 0 4px; }
-  .subsPreviewTag {
-    display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.04em; color: var(--ink-soft); margin-bottom: 6px;
-  }
-  .subsPreviewFrame {
-    position: relative; height: 84px; border-radius: 10px; overflow: hidden;
-    background: linear-gradient(135deg, #3a2d47, #241b2e);
-  }
-  .subsPreviewOld, .subsPreviewNew {
-    position: absolute; left: 0; right: 0; text-align: center;
-    font-size: 0.78rem; font-weight: 600; color: #fff;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
-  }
-  .subsPreviewOld { bottom: 22px; transition: opacity 0.2s ease; }
+  input[type=file]::file-selector-button { font: inherit; font-weight: 600; font-size: 0.88rem; border: 0; border-radius: 999px; padding: 7px 14px; margin-inline-end: 12px; background: var(--ink); color: var(--bg); cursor: pointer; }
+  select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent); }
+  .checkboxRow { display: flex; align-items: flex-start; gap: 10px; margin: 22px 0 4px; font-weight: 500; font-size: 0.93rem; cursor: pointer; }
+  .checkboxRow input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--blue); flex: none; }
+  .checkboxHint { margin: 0 0 4px; padding-inline-start: 28px; font-size: 0.84rem; color: var(--ink-soft); }
+  .subsPreview { margin: 12px 0 4px; }
+  .subsPreviewTag { display: inline-block; font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+  .subsPreviewFrame { position: relative; height: 88px; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #1B2A6B, #0A0F24 60%, #5A2A1A); }
+  .subsPreviewOld, .subsPreviewNew { position: absolute; left: 0; right: 0; text-align: center; font-size: 0.8rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
+  .subsPreviewOld { bottom: 24px; transition: opacity 0.25s var(--ease); }
   .subsPreviewNew { bottom: 10px; }
-  .subsPreviewBar {
-    position: absolute; left: 0; right: 0; bottom: 4px; height: 26px;
-    background: rgba(15, 12, 20, 0.94); border-radius: 4px;
-    opacity: 0; transition: opacity 0.2s ease;
-  }
+  .subsPreviewBar { position: absolute; left: 0; right: 0; bottom: 4px; height: 28px; background: rgba(7, 11, 28, 0.95); opacity: 0; transition: opacity 0.25s var(--ease); }
   .subsPreview.covered .subsPreviewOld { opacity: 0; }
   .subsPreview.covered .subsPreviewBar { opacity: 1; }
+  .formNote { font-size: 0.84rem; color: var(--ink-soft); margin: 12px 0 0; }
 
-  .btnPrimary {
-    background: var(--ink); color: var(--paper); border: none; cursor: pointer;
-    padding: 13px 28px; border-radius: 999px; font: inherit; font-size: 0.95rem; font-weight: 600;
-    display: inline-flex; align-items: center; gap: 8px; margin-top: 26px; transition: transform 0.15s ease;
-  }
-  .btnPrimary:hover { transform: translateY(-2px); }
+  .lockedForm { position: relative; min-height: 280px; }
+  .lockedForm fieldset { border: none; padding: 0; margin: 0; opacity: 0.35; pointer-events: none; }
+  .lockedOverlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; background: linear-gradient(180deg, transparent, var(--surface) 40%); }
+  .lockedOverlay .lede { margin: 0 0 6px; max-width: 280px; font-size: 1rem; }
+  .lockedOverlay .btnPrimary { margin-top: 8px; }
 
-  /* Cikis yapmis kullaniciya bos bir kutu yerine formun kendisini (devre disi/soluk)
-     gosterip ustune giris istemini bindiriyoruz - "yarim kalmis" hissini onluyor. */
-  .lockedForm { position: relative; min-height: 260px; }
-  .lockedForm fieldset { border: none; padding: 0; margin: 0; opacity: 0.35; filter: blur(0.3px); pointer-events: none; }
-  .lockedOverlay {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center; gap: 4px;
-    background: linear-gradient(180deg, transparent, var(--surface) 38%);
-  }
-  .lockedOverlay .lede { margin: 0 0 6px; max-width: 260px; }
-  .lockedOverlay .btnPrimary { margin-top: 0; }
-
-  .btnHero {
-    display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
-    background: var(--coral); color: #fff; border: none; cursor: pointer;
-    padding: 15px 30px; border-radius: 999px; font: inherit; font-size: 1rem; font-weight: 700;
-    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 16px 32px -12px rgba(214, 69, 92, 0.55);
-  }
-  .btnHero:hover { transform: translateY(-2px); box-shadow: 0 20px 38px -12px rgba(214, 69, 92, 0.65); }
-  .navLogin { padding: 10px 20px; font-size: 0.88rem; margin-top: 0; box-shadow: none; }
-  .navLogin:hover { box-shadow: 0 10px 20px -10px rgba(214, 69, 92, 0.55); }
-
-  /* Iki katmanli hero butonu (Submagic'in "Get Started Now [Try for free]"
-     tarzi) - disi koyu, icindeki rozet coral renginde vurgu yapiyor. */
-  .btnNested {
-    display: inline-flex; align-items: center; gap: 14px; margin-top: 24px;
-    background: #241B2E; color: #fff; border: none; cursor: pointer;
-    padding: 9px 9px 9px 28px; border-radius: 999px; font: inherit; font-size: 1.08rem; font-weight: 800;
-    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 20px 44px -16px rgba(0, 0, 0, 0.55), 0 0 0 6px var(--coral-soft);
-  }
-  .btnNested:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6), 0 0 0 8px var(--coral-soft);
-  }
-  .btnNestedBadge {
-    background: var(--coral); color: #fff; padding: 13px 24px; border-radius: 999px;
-    font-size: 0.94rem; font-weight: 800; white-space: nowrap;
-    box-shadow: 0 8px 20px -6px rgba(214, 69, 92, 0.7);
-  }
-
-  .badge {
-    display: inline-flex; align-items: center; gap: 6px; font-family: ui-monospace, monospace;
-    font-size: 0.72rem; letter-spacing: 0.06em; background: var(--teal-soft); color: var(--teal);
-    padding: 5px 12px; border-radius: 999px; margin-bottom: 18px;
-  }
-
-  video { width: 100%; border-radius: 12px; border: 1px solid var(--border); display: block; margin: 22px 0; }
-  .btnGhost { color: var(--ink); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px; }
-
-  .freeNote {
-    display: inline-block; font-size: 0.8rem; color: var(--ink-soft);
-    background: var(--teal-soft); border-radius: 10px; padding: 7px 12px; margin-top: 14px;
-  }
-  .formNote {
-    font-size: 0.78rem; color: var(--ink-soft); margin: 10px 0 0; text-align: center;
-  }
-
-  .demoWrap { display: flex; flex-direction: column; align-items: center; margin: 56px 0; }
-  .demoFrame {
-    width: 210px; aspect-ratio: 9 / 16; border-radius: 28px; position: relative; overflow: hidden;
-    background: linear-gradient(160deg, var(--ink) 0%, var(--teal) 140%);
-    border: 1px solid var(--border); box-shadow: 0 40px 70px -32px rgba(0,0,0,0.42);
-  }
-  .demoCaption {
-    position: absolute; left: 12px; right: 12px; bottom: 22px;
-    background: rgba(0,0,0,0.55); color: #fff; font-weight: 700; font-size: 0.82rem; line-height: 1.35;
-    padding: 9px 10px; border-radius: 10px; text-align: center; border: 2px solid var(--coral);
-    transition: opacity 0.25s ease;
-  }
-  .demoTime {
-    position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.4); color: #fff;
-    font-family: ui-monospace, monospace; font-size: 0.68rem; padding: 3px 8px; border-radius: 999px;
-    transition: opacity 0.25s ease;
-  }
-  .demoPlay {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -62%);
-    width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.22);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .demoPlay::after {
-    content: ""; border-style: solid; border-width: 8px 0 8px 13px;
-    border-color: transparent transparent transparent #fff; margin-left: 3px;
-  }
-  .demoLabel { margin-top: 14px; font-size: 0.78rem; color: var(--ink-soft); }
-
-  .sectionTitle {
-    font-family: Georgia, serif; font-size: 1.25rem; text-align: center; margin: 0 0 22px;
-  }
-  .stepGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  .step { text-align: center; padding: 0 6px; }
-  .stepNum {
-    display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
-    border-radius: 50%; background: var(--coral-soft); color: var(--coral); font-weight: 700;
-    font-size: 0.86rem; margin-bottom: 12px;
-  }
-  .step h3 { font-size: 0.94rem; margin: 4px 0 6px; }
-  .step p { font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
-
-  .pricing { margin: 56px 0 0; }
-  .planGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  /* ---------- Pricing ---------- */
+  .pricing { margin-top: 128px; }
+  .planGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
   .planCard {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-    padding: 22px; position: relative; cursor: pointer;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    background: var(--surface); border-radius: 22px; padding: 30px 28px; position: relative; cursor: pointer;
+    box-shadow: var(--shadow), inset 0 0 0 1px var(--line);
+    transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
   }
-  .planCard:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -12px rgba(36, 27, 46, 0.25);
-  }
-  .planCard.selected {
-    border-color: var(--coral); box-shadow: 0 12px 28px -14px rgba(214, 69, 92, 0.4);
-  }
-  .planCard.selected::after {
-    content: "✓"; position: absolute; top: 14px; right: 16px;
-    color: var(--coral); font-weight: 700;
-  }
-  .planCard h3 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 1.05rem; }
-  .planPrice { font-size: 1.6rem; font-weight: 700; margin: 0 0 10px; }
-  .planPrice span { font-size: 0.8rem; font-weight: 400; color: var(--ink-soft); }
-  .planCard p:last-child { font-size: 0.85rem; color: var(--ink-soft); margin: 0; line-height: 1.5; }
-  .planPro { border-color: var(--coral); }
-  .planBadge {
-    display: inline-block; background: var(--coral-soft); color: var(--coral);
-    font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 999px;
-    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
-  }
-  @media (max-width: 560px) {
-    .planGrid { grid-template-columns: 1fr; }
-  }
+  .planCard:hover { transform: translateY(-6px); box-shadow: 0 30px 60px -28px rgba(46, 75, 240, 0.45), inset 0 0 0 1px var(--line); }
+  .planCard.selected { box-shadow: 0 30px 60px -28px rgba(46, 75, 240, 0.5), inset 0 0 0 2px var(--blue); }
+  .planCard.selected::after { content: "\\2713"; position: absolute; top: 22px; inset-inline-end: 24px; color: var(--blue-text); font-weight: 800; }
+  .planCard h3 { font-size: 1rem; font-weight: 700; color: var(--ink-soft); margin: 0 0 10px; }
+  .planPrice { font-family: var(--display); font-size: 2.2rem; font-weight: 600; letter-spacing: -0.04em; line-height: 1; margin: 0 0 16px; }
+  .planPrice span { font-family: var(--font); font-size: 0.9rem; font-weight: 500; letter-spacing: 0; color: var(--ink-soft); }
+  .planCard p:last-child { font-size: 0.95rem; color: var(--ink-soft); margin: 0; padding-top: 16px; border-top: 1px solid var(--line); }
+  .planBadge { display: inline-block; font-size: 0.78rem; font-weight: 700; color: var(--tang-text); background: color-mix(in srgb, var(--tang) 12%, transparent); padding: 3px 11px; border-radius: 999px; margin-bottom: 12px; }
+  .trustNote { margin-top: 26px; font-size: 0.92rem; color: var(--ink-soft); max-width: 70ch; }
 
-  .trustNote {
-    margin: 18px auto 0; max-width: 640px; text-align: center;
-    font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5;
-  }
-
-  .faq { margin: 56px 0 8px; }
-  .faq details {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 14px 18px; margin-bottom: 10px;
-  }
-  .faq summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; list-style: none; }
+  /* ---------- FAQ ---------- */
+  .faq { margin-top: 128px; }
+  .faq details { border-top: 1px solid var(--line); padding: 20px 0; }
+  .faq details:last-of-type { border-bottom: 1px solid var(--line); }
+  .faq summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 1.1rem; display: flex; justify-content: space-between; gap: 20px; align-items: center; }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: "+"; float: right; color: var(--teal); font-weight: 700; }
-  .faq details[open] summary::after { content: "\\2212"; }
-  .faq p { margin: 10px 0 0; color: var(--ink-soft); font-size: 0.88rem; line-height: 1.55; }
+  .faq summary::after { content: "+"; flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 500; font-size: 1.3rem; color: var(--blue-text); box-shadow: inset 0 0 0 1px var(--line); transition: transform 0.4s var(--spring); }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq p { margin-top: 12px; color: var(--ink-soft); max-width: 64ch; }
+  .faqGrid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 32px 64px; }
 
-  @media (max-width: 560px) {
-    .stepGrid { grid-template-columns: 1fr; }
+  footer.siteFoot { margin-top: 128px; border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 0.9rem; color: var(--ink-soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  footer.siteFoot a { color: var(--ink); font-weight: 600; text-decoration: none; }
+  footer.siteFoot a:hover { color: var(--blue-text); }
+
+  /* ---------- Result / status / error pages ---------- */
+  .page .card { margin-top: 32px; }
+  .page h1.headline { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 6px 0 12px; }
+  .page p.lede { margin: 0; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 700; color: var(--blue-text); background: color-mix(in srgb, var(--blue) 12%, transparent); padding: 5px 13px; border-radius: 999px; margin-bottom: 16px; }
+  video { width: 100%; border-radius: 16px; display: block; margin: 22px 0 0; background: var(--scr); }
+  .working { height: 6px; border-radius: 6px; background: var(--bg-2); overflow: hidden; margin-top: 26px; }
+  .working i { display: block; width: 40%; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--blue), var(--tang)); animation: slide 1.6s var(--ease) infinite; }
+
+  /* ---------- Motion ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .rv, .step, .planCard, .faq details { animation: rise linear both; animation-timeline: view(); animation-range: entry 5% entry 75%; }
+      .step:nth-child(2), .planCard:nth-child(2) { animation-range: entry 14% entry 88%; }
+      .step:nth-child(3), .planCard:nth-child(3) { animation-range: entry 22% cover 35%; }
+      .stepGrid::before { animation: drawY linear both; animation-timeline: view(); animation-range: entry 20% cover 50%; }
+    }
+    .stepNum { animation: nodeBreath 3.2s var(--ease) infinite; }
+    .step:nth-child(2) .stepNum { animation-delay: 1s; }
+    .step:nth-child(3) .stepNum { animation-delay: 2s; }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+  @keyframes drawY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes tick { to { transform: translateX(-50%); } }
+  @keyframes tickRtl { to { transform: translateX(50%); } }
+  @keyframes drift1 { to { transform: translate(30%, 22%) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(-28%, -30%) scale(0.9); } }
+  @keyframes nodePop { 40% { transform: scale(1.35); } }
+  @keyframes nodeBreath { 0%, 60%, 100% { transform: scale(1); } 25% { transform: scale(1.12); } }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .tickTrack, .blob, .working i, .brand .mk-c, .brand .mk-t { animation: none !important; }
+    .tickTrack { flex-wrap: wrap; width: auto; }
+    .tickSet[aria-hidden] { display: none; }
+    .tickSet { flex-wrap: wrap; white-space: normal; gap: 10px 26px; }
+    .ticker { -webkit-mask-image: none; mask-image: none; }
+    .btn, .btnNested, .btnNestedBadge, .planCard, .demoCaption .cw, .faq summary::after { transition: none !important; }
   }
 
-  footer.siteFoot { padding: 30px 0 48px; font-size: 0.8rem; color: var(--ink-soft); text-align: center; }
-  footer.siteFoot a { color: inherit; }
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .hero, .splitRow, .faqGrid { grid-template-columns: minmax(0, 1fr); }
+    .hero { gap: 56px; padding-top: 32px; }
+    .planGrid { grid-template-columns: minmax(0, 1fr); max-width: 520px; }
+    .contentSection { margin-top: 88px; }
+    .pricing, .faq, footer.siteFoot { margin-top: 96px; }
+  }
+  @media (max-width: 560px) {
+    .shell { padding-inline: 18px; }
+    .wrap { padding-inline: 18px; }
+    nav.top { padding: 16px 0; }
+    .navActions .btnQuiet { display: none; }
+    .userName { display: none; }
+    h1.headline { font-size: 2rem; }
+    p.lede { font-size: 1.04rem; }
+    .btnNested { font-size: 0.98rem; padding-inline-start: 20px; }
+    .card { padding: 26px 20px; }
+    .ticker { margin-top: 48px; padding: 14px 0; }
+  }
 </style>
 """
 
 LOGO_SVG = """
 <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
-  <defs>
-    <linearGradient id="mark" x1="22" y1="18" x2="78" y2="82" gradientUnits="userSpaceOnUse">
-      <stop offset="0.42" stop-color="var(--coral)"/>
-      <stop offset="0.58" stop-color="var(--teal)"/>
-    </linearGradient>
-  </defs>
-  <g fill="none" stroke="var(--ink-soft)" stroke-opacity="0.4" stroke-width="5" stroke-linecap="round">
-    <line x1="22" y1="18" x2="22" y2="82"/>
-    <line x1="22" y1="18" x2="50" y2="50"/>
-    <line x1="50" y1="50" x2="78" y2="82"/>
-    <line x1="78" y1="18" x2="78" y2="82"/>
-  </g>
-  <circle cx="22" cy="18" r="9" fill="var(--coral)"/>
-  <circle cx="22" cy="82" r="9" fill="var(--coral)"/>
-  <circle cx="78" cy="18" r="9" fill="var(--teal)"/>
-  <circle cx="78" cy="82" r="9" fill="var(--teal)"/>
-  <circle cx="50" cy="50" r="11" fill="url(#mark)"/>
+  <defs><linearGradient id="nxg" x1="0" y1="0" x2="1" y2="1"><stop offset=".2" stop-color="#4A67FF"/><stop offset=".8" stop-color="#FF7A3D"/></linearGradient></defs>
+  <path class="mk-line" d="M24 20v60M24 20l52 60M76 20v60"/>
+  <circle class="mk-node mk-c" cx="24" cy="20" r="10"/><circle class="mk-node mk-c" cx="24" cy="80" r="10"/>
+  <circle class="mk-node mk-t" cx="76" cy="20" r="10"/><circle class="mk-node mk-t" cx="76" cy="80" r="10"/>
+  <circle class="mk-node" cx="50" cy="50" r="12.5" fill="url(#nxg)"/>
 </svg>
 """
 
 NAV = f"""
 <nav class="top">
-  <a class="brand" href="/">
+  <a class="brand" href="/" aria-label="Subly">
     {LOGO_SVG}
-    <div class="names">
+    <span class="names">
       <span class="product">Subly</span>
       <span class="by">Nexi Digital</span>
-    </div>
+    </span>
   </a>
   {{% if user %}}
     <div class="userBox">
-      <img class="userAvatar" src="{{{{ user.picture }}}}" alt="">
+      {{% if user.picture %}}<img class="userAvatar" src="{{{{ user.picture }}}}" alt="">{{% endif %}}
       <span class="userName">{{{{ user.name }}}}</span>
       <a href="/logout" class="btnGhost">{{{{ t.logout }}}}</a>
     </div>
   {{% else %}}
     <div class="navActions">
-      <a href="/login/google" class="btnGhostNav">{{{{ t.nav_login }}}}</a>
-      <a href="/login/google" class="btnHero navLogin">{{{{ t.nav_cta }}}}</a>
+      <a href="/login/google" class="btn btnQuiet">{{{{ t.nav_login }}}}</a>
+      <a href="/login/google" class="btn btnBlue">{{{{ t.nav_cta }}}}</a>
     </div>
   {{% endif %}}
 </nav>
+"""
+
+# The 14 caption languages, each written in its own script.
+TICKER_LANGS = ["English", "Español", "Português", "Français", "Deutsch", "Italiano", "Türkçe",
+                "العربية", "हिन्दी", "中文", "日本語", "한국어", "Русский", "Bahasa Indonesia"]
+TICKER_SEP = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/>'
+              '<circle cx="5" cy="12" r="4" fill="#4A67FF"/><circle cx="19" cy="12" r="4" fill="#FF7A3D"/></svg>')
+TICKER_ITEMS = "".join(f"<span>{name}</span>{TICKER_SEP}" for name in TICKER_LANGS)
+
+# Hero phone demo: captions light up word by word, like the karaoke style many
+# creators use. Plain string (not an f-string) so the JS braces stay single.
+DEMO_JS = """
+<script>
+(function () {
+  var cap = document.getElementById("demoCaption");
+  var timeEl = document.getElementById("demoTime");
+  var bar = document.getElementById("demoBar");
+  var captions = window.SUBLY_CAPTIONS || [];
+  if (!cap || !captions.length) return;
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function render(text) {
+    cap.textContent = "";
+    return text.split(/\\s+/).map(function (w, i, all) {
+      var s = document.createElement("span");
+      s.className = "cw";
+      s.textContent = w;
+      cap.appendChild(s);
+      if (i < all.length - 1) cap.appendChild(document.createTextNode(" "));
+      return s;
+    });
+  }
+  if (reduce) { render(captions[0]); return; }
+  var ci = 0, seconds = 7, visible = true;
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(cap);
+  }
+  function play() {
+    if (!visible || document.hidden) { setTimeout(play, 600); return; }
+    var words = render(captions[ci]);
+    if (cap.animate) cap.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 380, easing: "cubic-bezier(.32,.72,0,1)" });
+    var wi = 0;
+    var step = setInterval(function () {
+      words.forEach(function (w, i) { w.classList.toggle("on", i === wi); });
+      wi++;
+      seconds++;
+      timeEl.textContent = "0:" + (seconds < 10 ? "0" : "") + seconds;
+      if (bar && bar.animate) {
+        var from = ((seconds - 1) % 30) / 30, to = (seconds % 30) / 30;
+        bar.animate([{ transform: "scaleX(" + from + ")" }, { transform: "scaleX(" + to + ")" }], { duration: 420, fill: "forwards" });
+      }
+      if (wi > words.length) {
+        clearInterval(step);
+        ci = (ci + 1) % captions.length;
+        setTimeout(play, 500);
+      }
+    }, 420);
+  }
+  setTimeout(play, 500);
+})();
+</script>
 """
 
 UPLOAD_FORM = f"""
@@ -380,65 +429,58 @@ UPLOAD_FORM = f"""
 <html lang="{{{{ lang }}}}" dir="{{{{ dir }}}}">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Subly — Nexi Digital</title>
+  <title>Subly | Nexi Digital</title>
+  <meta name="description" content="{{{{ t.lede }}}}">
   {BRAND_HEAD}
 </head>
 <body>
-<div class="heroOuter">
+<div class="shell">
   {NAV}
-  <div class="card heroBanner">
-    <div class="splitRow">
-      <div class="half">
-        <p class="eyebrow">{{{{ t.eyebrow|safe }}}}</p>
-        <h1 class="headline">{{{{ t.headline|safe }}}}</h1>
-        <p class="lede">{{{{ t.lede }}}}</p>
-        <a href="#uploadForm" class="btnNested">
-          {{{{ t.hero_cta_outer }}}}
-          <span class="btnNestedBadge">{{{{ t.hero_cta_badge }}}}</span>
-        </a>
-        <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
+  <section class="hero">
+    <div class="heroText">
+      <div class="chips">
+        {{% for chip in t.eyebrow.split(' &middot; ') %}}<span class="chip">{{{{ chip|safe }}}}</span>{{% endfor %}}
       </div>
-
-      <div class="half demoWrap">
-        <div class="demoFrame">
-          <span class="demoTime" id="demoTime">0:07</span>
-          <span class="demoPlay"></span>
-          <div class="demoCaption" id="demoCaption">{{{{ t.demo_caption }}}}</div>
-        </div>
-        <p class="demoLabel">{{{{ t.demo_label }}}}</p>
-      </div>
+      {{% set hp = t.headline.split(' &mdash; ') %}}
+      <h1 class="headline">{{{{ hp[0]|safe }}}}{{% if hp|length > 1 %}}<span class="h1sub">{{{{ hp[1]|safe }}}}</span>{{% endif %}}</h1>
+      <p class="lede">{{{{ t.lede }}}}</p>
+      <a href="#uploadForm" class="btnNested">
+        {{{{ t.hero_cta_outer }}}}
+        <span class="btnNestedBadge">{{{{ t.hero_cta_badge }}}}</span>
+      </a>
+      <p class="freeNote">{{{{ t.free_note|safe }}}}</p>
     </div>
+
+    <div class="demoWrap">
+      <div class="phone">
+        <div class="demoFrame">
+          <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+          <span class="demoTime" id="demoTime">0:07</span>
+          <span class="demoPlay" aria-hidden="true"></span>
+          <div class="demoCaption" id="demoCaption">{{{{ t.demo_caption }}}}</div>
+          <div class="demoBar" aria-hidden="true"><i id="demoBar"></i></div>
+        </div>
+      </div>
+      <p class="demoLabel">{{{{ t.demo_label }}}}</p>
+    </div>
+  </section>
+</div>
+
+<div class="ticker" aria-label="{{{{ t.step2_desc }}}}">
+  <div class="tickTrack">
+    <div class="tickSet">{TICKER_ITEMS}</div>
+    <div class="tickSet" aria-hidden="true">{TICKER_ITEMS}</div>
   </div>
 </div>
 
 <script>
-  (function () {{
-    var captions = [
-      {{{{ t.demo_caption|tojson }}}},
-      {{{{ t.demo_caption2|tojson }}}},
-      {{{{ t.demo_caption3|tojson }}}}
-    ];
-    var times = ["0:07", "0:12", "0:19"];
-    var i = 0;
-    var captionEl = document.getElementById("demoCaption");
-    var timeEl = document.getElementById("demoTime");
-    setInterval(function () {{
-      i = (i + 1) % captions.length;
-      captionEl.style.opacity = "0";
-      timeEl.style.opacity = "0";
-      setTimeout(function () {{
-        captionEl.textContent = captions[i];
-        timeEl.textContent = times[i];
-        captionEl.style.opacity = "1";
-        timeEl.style.opacity = "1";
-      }}, 250);
-    }}, 2600);
-  }})();
+  window.SUBLY_CAPTIONS = [{{{{ t.demo_caption|tojson }}}}, {{{{ t.demo_caption2|tojson }}}}, {{{{ t.demo_caption3|tojson }}}}];
 </script>
+{DEMO_JS}
 
-<div class="heroOuter contentSection">
-  <div class="splitRow contentRow">
-    <div class="half card" id="uploadForm">
+<div class="shell contentSection">
+  <div class="splitRow">
+    <div class="card rv" id="uploadForm">
       {{% if user %}}
         <form action="/process" method="post" enctype="multipart/form-data">
           <label for="video">{{{{ t.label_video }}}}</label>
@@ -452,35 +494,28 @@ UPLOAD_FORM = f"""
 
           <label class="checkboxRow" for="coverSubs">
             <input type="checkbox" id="coverSubs" name="cover_subs" onchange="toggleSubsPreview(this)">
-            {{{{ t.cover_subs_label }}}}
+            <span>{{{{ t.cover_subs_label }}}}</span>
           </label>
           <p class="checkboxHint">{{{{ t.cover_subs_hint }}}}</p>
 
           <div class="subsPreview" id="subsPreviewBox">
-            <div class="subsPreviewCol">
-              <span class="subsPreviewTag" id="subsPreviewTag">{{{{ t.cover_subs_before }}}}</span>
-              <div class="subsPreviewFrame">
-                <span class="subsPreviewOld">こんにちは</span>
-                <span class="subsPreviewBar"></span>
-                <span class="subsPreviewNew">Hola, ¿qué tal?</span>
-              </div>
+            <span class="subsPreviewTag" id="subsPreviewTag">{{{{ t.cover_subs_before }}}}</span>
+            <div class="subsPreviewFrame">
+              <span class="subsPreviewOld">こんにちは</span>
+              <span class="subsPreviewBar"></span>
+              <span class="subsPreviewNew">Hola, ¿qué tal?</span>
             </div>
           </div>
 
-          <button type="submit" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
+          <button type="submit" class="btn btnBlue btnPrimary">{{{{ t.button_process|safe }}}}</button>
           <p class="formNote">{{{{ t.free_note|safe }}}}</p>
         </form>
         <script>
           function toggleSubsPreview(cb) {{
             var box = document.getElementById("subsPreviewBox");
             var tag = document.getElementById("subsPreviewTag");
-            if (cb.checked) {{
-              box.classList.add("covered");
-              tag.textContent = "{{{{ t.cover_subs_after }}}}";
-            }} else {{
-              box.classList.remove("covered");
-              tag.textContent = "{{{{ t.cover_subs_before }}}}";
-            }}
+            box.classList.toggle("covered", cb.checked);
+            tag.textContent = cb.checked ? {{{{ t.cover_subs_after|tojson }}}} : {{{{ t.cover_subs_before|tojson }}}};
           }}
         </script>
       {{% else %}}
@@ -494,42 +529,28 @@ UPLOAD_FORM = f"""
                 <option value="{{{{ value }}}}">{{{{ label }}}}</option>
               {{% endfor %}}
             </select>
-            <label class="checkboxRow"><input type="checkbox"> {{{{ t.cover_subs_label }}}}</label>
-            <button type="button" class="btnPrimary">{{{{ t.button_process|safe }}}}</button>
+            <label class="checkboxRow"><input type="checkbox"> <span>{{{{ t.cover_subs_label }}}}</span></label>
+            <button type="button" class="btn btnBlue btnPrimary">{{{{ t.button_process|safe }}}}</button>
           </fieldset>
           <div class="lockedOverlay">
             <p class="lede">{{{{ t.login_prompt }}}}</p>
-            <a href="/login/google" class="btnPrimary">{{{{ t.login_google }}}}</a>
+            <a href="/login/google" class="btn btnBlue btnPrimary">{{{{ t.login_google }}}}</a>
           </div>
         </div>
       {{% endif %}}
     </div>
 
-    <div class="half stepsPanel">
+    <div class="stepsPanel">
       <h2 class="sectionTitle">{{{{ t.how_it_works_title }}}}</h2>
-      <div class="stepGrid">
-        <div class="step">
-          <span class="stepNum">1</span>
-          <h3>{{{{ t.step1_title }}}}</h3>
-          <p>{{{{ t.step1_desc }}}}</p>
-        </div>
-        <div class="step">
-          <span class="stepNum">2</span>
-          <h3>{{{{ t.step2_title }}}}</h3>
-          <p>{{{{ t.step2_desc }}}}</p>
-        </div>
-        <div class="step">
-          <span class="stepNum">3</span>
-          <h3>{{{{ t.step3_title }}}}</h3>
-          <p>{{{{ t.step3_desc }}}}</p>
-        </div>
-      </div>
+      <ol class="stepGrid">
+        <li class="step"><span class="stepNum">1</span><h3>{{{{ t.step1_title }}}}</h3><p>{{{{ t.step1_desc }}}}</p></li>
+        <li class="step"><span class="stepNum">2</span><h3>{{{{ t.step2_title }}}}</h3><p>{{{{ t.step2_desc }}}}</p></li>
+        <li class="step"><span class="stepNum">3</span><h3>{{{{ t.step3_title }}}}</h3><p>{{{{ t.step3_desc }}}}</p></li>
+      </ol>
     </div>
   </div>
-</div>
 
-<div class="wrap">
-  <div class="pricing">
+  <section class="pricing">
     <h2 class="sectionTitle">{{{{ t.pricing_title }}}}</h2>
     <div class="planGrid">
       <div class="planCard" data-plan="free" onclick="selectPlan(this, true)">
@@ -537,13 +558,13 @@ UPLOAD_FORM = f"""
         <p class="planPrice">$0</p>
         <p>{{{{ t.free_note|safe }}}}</p>
       </div>
-      <div class="planCard planPro" data-plan="pro" onclick="selectPlan(this, false)">
+      <div class="planCard" data-plan="pro" onclick="selectPlan(this, false)">
         <span class="planBadge">{{{{ t.pricing_soon }}}}</span>
         <h3>Pro</h3>
         <p class="planPrice">&#8378;{{{{ pro_price }}}}<span>{{{{ t.per_month }}}}</span></p>
         <p>{{{{ t.pricing_pro_desc }}}}</p>
       </div>
-      <div class="planCard planPro" data-plan="premium" onclick="selectPlan(this, false)">
+      <div class="planCard" data-plan="premium" onclick="selectPlan(this, false)">
         <span class="planBadge">{{{{ t.pricing_soon }}}}</span>
         <h3>Premium</h3>
         <p class="planPrice">&#8378;{{{{ premium_price }}}}<span>{{{{ t.per_month }}}}</span></p>
@@ -551,7 +572,7 @@ UPLOAD_FORM = f"""
       </div>
     </div>
     <p class="trustNote">{{{{ t.trust_note }}}}</p>
-  </div>
+  </section>
 
   <script>
     function selectPlan(card, scrollToForm) {{
@@ -564,27 +585,17 @@ UPLOAD_FORM = f"""
     }}
   </script>
 
-  <div class="faq">
+  <section class="faq faqGrid">
     <h2 class="sectionTitle">{{{{ t.faq_title }}}}</h2>
-    <details>
-      <summary>{{{{ t.faq_q1 }}}}</summary>
-      <p>{{{{ t.faq_a1 }}}}</p>
-    </details>
-    <details>
-      <summary>{{{{ t.faq_q2 }}}}</summary>
-      <p>{{{{ t.faq_a2 }}}}</p>
-    </details>
-    <details>
-      <summary>{{{{ t.faq_q3 }}}}</summary>
-      <p>{{{{ t.faq_a3|safe }}}}</p>
-    </details>
-    <details>
-      <summary>{{{{ t.faq_q4 }}}}</summary>
-      <p>{{{{ t.faq_a4 }}}}</p>
-    </details>
-  </div>
+    <div>
+      <details open><summary>{{{{ t.faq_q1 }}}}</summary><p>{{{{ t.faq_a1 }}}}</p></details>
+      <details><summary>{{{{ t.faq_q2 }}}}</summary><p>{{{{ t.faq_a2 }}}}</p></details>
+      <details><summary>{{{{ t.faq_q3 }}}}</summary><p>{{{{ t.faq_a3|safe }}}}</p></details>
+      <details><summary>{{{{ t.faq_q4 }}}}</summary><p>{{{{ t.faq_a4 }}}}</p></details>
+    </div>
+  </section>
 
-  <footer class="siteFoot">{{{{ t.footer }}}}</footer>
+  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
 </div>
 </body>
 </html>
@@ -598,18 +609,17 @@ RESULT_PAGE = f"""
   <title>Subly</title>
   {BRAND_HEAD}
 </head>
-<body>
+<body class="page">
 <div class="wrap">
   {NAV}
   <div class="card">
     <span class="badge">{{{{ t.badge_ready|safe }}}}</span>
     <h1 class="headline">{{{{ t.result_headline|safe }}}}</h1>
     <video src="/outputs/{{{{ filename }}}}" controls></video>
-    <a href="/outputs/{{{{ filename }}}}" download class="btnPrimary">{{{{ t.download|safe }}}}</a>
-    <br><br>
-    <a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a>
+    <a href="/outputs/{{{{ filename }}}}" download class="btn btnBlue btnPrimary">{{{{ t.download|safe }}}}</a>
+    <p style="margin-top: 22px"><a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a></p>
   </div>
-  <footer class="siteFoot">{{{{ t.footer }}}}</footer>
+  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
 </div>
 </body>
 </html>
@@ -624,15 +634,16 @@ STATUS_PAGE = f"""
   <title>Subly</title>
   {BRAND_HEAD}
 </head>
-<body>
+<body class="page">
 <div class="wrap">
   {NAV}
   <div class="card">
     <span class="badge">{{{{ t.processing_badge|safe }}}}</span>
     <h1 class="headline">{{{{ t.processing_title|safe }}}}</h1>
     <p class="lede">{{{{ t.processing_body }}}}</p>
+    <div class="working" aria-hidden="true"><i></i></div>
   </div>
-  <footer class="siteFoot">{{{{ t.footer }}}}</footer>
+  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
 </div>
 </body>
 </html>
@@ -646,15 +657,15 @@ ERROR_PAGE = f"""
   <title>Subly</title>
   {BRAND_HEAD}
 </head>
-<body>
+<body class="page">
 <div class="wrap">
   {NAV}
   <div class="card">
     <h1 class="headline">{{{{ error_title }}}}</h1>
     <p class="lede">{{{{ error_body }}}}</p>
-    <a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a>
+    <p style="margin-top: 22px"><a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a></p>
   </div>
-  <footer class="siteFoot">{{{{ t.footer }}}}</footer>
+  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
 </div>
 </body>
 </html>
