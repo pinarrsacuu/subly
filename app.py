@@ -52,10 +52,10 @@ init_auth(app)
 # Bekleyen isler bu kilidi sirayla alir (gunicorn tek worker ile calistigi surece).
 PROCESS_LOCK = threading.Lock()
 OUTPUT_TTL_SECONDS = 24 * 60 * 60
-# "20 dakika" sinirinda 19:59 gorunen bir video, dosyadaki ses/goruntu izlerinin
-# birkac saniyelik farki yuzunden 20:00'i biraz asabiliyor. Kullaniciyi bunun icin
-# geri cevirmemek adina sure sinirina kucuk bir tolerans ekliyoruz.
-DURATION_GRACE_SECONDS = 15
+# Sure sinirina tolerans: kullanici "20 dakikalik" diye kestigi videonun gercekte
+# 21 dakikayi biraz gectigini gordu (CapCut cikti suresi hedeften uzun olabiliyor).
+# Siniri saniyesi saniyesine uygulayip geri cevirmek yerine 90 saniye pay birakiyoruz.
+DURATION_GRACE_SECONDS = 90
 
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
