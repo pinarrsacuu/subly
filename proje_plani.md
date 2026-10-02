@@ -127,3 +127,8 @@ Kullanıcı en basit haliyle bir uygulama geliştirmeye başlamak istiyor — bi
   - Bunun üzerine: çeviri 40 satırlık gruplar halinde **paralel** yapılıyor (hız + uzun videoda yarım JSON riski kalktı); Çince/Japonca altyazı satırları elle bölünüyor (boşluksuz dillerde tek uzun satır oluyordu).
   - **Açık konular:** (1) sunucuyu Avrupa'ya (Frankfurt) taşımak yüklemeyi hızlandırır — Render'da bölge değişmiyor, yeni servis gerekir; (2) gömme süresi ancak daha güçlü sunucuyla (2 CPU, $85/ay) ciddi kısalır; (3) sitedeki "bir dakikadan kısa sürede hazır" vaadi kısa videolar için doğrulanmalı.
 
+
+### 2026-10-02 — Hız ifadeleri gerçek ölçüme göre düzeltildi
+- Ölçüm (Render Standard, 720p, çevirili): 42 MB kısa video 76 sn (ses 1, yazıya dökme 9, çeviri 12, gömme 54).
+- "Bir dakikadan kısa sürede" cümlesi 14 dilde "bir iki dakikada" oldu (step3_desc, faq_a4).
+- Ana başlıktaki "saniyeler içinde" 14 dilde "dakikalar içinde" oldu.
