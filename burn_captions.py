@@ -24,12 +24,13 @@ CAPTION_STYLE = (
     "MarginV=60"
 )
 
-# Uzun kenari 1080p ile sinirliyoruz: sosyal medya videolari icin yeterli, ve 4K
-# bir videoyu tek islemcide kodlamak hem cok yavas hem de bellegi zorluyor.
-# 1080p ve alti videolar degismeden kaliyor (min(1920, ...) sayesinde buyutme yok).
-# (Render Starter/512MB doneminde bu sinir 720p idi; Standard/2GB'a gecince yukseltildi.)
+# Uzun kenari 720p ile sinirliyoruz. Sebep hiz: sunucuda tek islemci var ve
+# 1080p cikti 720p'ye gore ~2.6 kat uzun suruyor (2026-10-02'de canlida 1080p ile
+# 1 dakikalik video ~5 dk, 5 dakikalik video ~10 dk surdu - kabul edilemez).
+# Telefonda izlenen TikTok/Reels/Shorts icin 720p yeterli. 720p ve alti videolar
+# degismeden kaliyor (min(1280, ...) sayesinde buyutme yok).
 SCALE_FILTER = (
-    "scale='if(gt(iw,ih),min(1920,iw),-2)':'if(gt(iw,ih),-2,min(1920,ih))'"
+    "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'"
 )
 
 # Kullanici "videoda zaten yakilmis altyazi var, ustunu kapat" secenegini

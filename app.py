@@ -40,7 +40,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ["SECRET_KEY"]
 # Tek dosya icin ust sinir: daha buyugu sunucunun diskini/bellegini tek basina
 # kilitleyebilir. Flask bunu asan yuklemeyi 413 hatasiyla reddeder (asagida yakalaniyor).
-MAX_UPLOAD_MB = 1024
+MAX_UPLOAD_MB = 2048
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 init_db()
 init_jobs_db()
@@ -242,6 +242,13 @@ BRAND_HEAD = """
   .subsPreview.covered .subsPreviewOld { opacity: 0; }
   .subsPreview.covered .subsPreviewBar { opacity: 1; }
   .formNote { font-size: 0.84rem; color: var(--ink-soft); margin: 12px 0 0; }
+  .uploadError { margin: 10px 0 0; font-size: 0.92rem; font-weight: 600; color: var(--tang-text); }
+  .uploadProgress { margin-top: 18px; }
+  .uploadProgress > p:first-child { display: flex; justify-content: space-between; font-size: 0.92rem; font-weight: 600; }
+  .uploadProgress .working { margin-top: 8px; }
+  .uploadProgress .working i { width: 100%; animation: none; transform-origin: left; transform: scaleX(0); transition: transform 0.3s var(--ease); }
+  [dir="rtl"] .uploadProgress .working i { transform-origin: right; }
+  .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
   .lockedForm { position: relative; min-height: 280px; }
   .lockedForm fieldset { border: none; padding: 0; margin: 0; opacity: 0.35; pointer-events: none; }
@@ -439,6 +446,61 @@ DEMO_JS = """
 </script>
 """
 
+# Yukleme formu: dosya secilince boyut ve sure tarayicida kontrol edilir (buyuk bir
+# dosyayi dakikalarca yukleyip sonra "cok uzun" hatasi almamak icin), yukleme
+# sirasinda yuzde gosterilir. Plain string - JS suslu parantezleri tek kaliyor.
+UPLOAD_JS = """
+<script>
+(function () {
+  var form = document.getElementById("uploadFormEl");
+  if (!form || !window.XMLHttpRequest) return;
+  var input = document.getElementById("video");
+  var note = document.getElementById("uploadError");
+  var box = document.getElementById("uploadProgress");
+  var bar = document.getElementById("uploadBar");
+  var pct = document.getElementById("uploadPct");
+  var button = form.querySelector("button[type=submit]");
+  var blocked = false;
+  function fail(msg) { blocked = true; note.textContent = msg; note.hidden = false; button.disabled = true; }
+  function clear() { blocked = false; note.hidden = true; button.disabled = false; }
+  input.addEventListener("change", function () {
+    clear();
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > Number(form.dataset.maxBytes)) { fail(form.dataset.msgSize); return; }
+    var probe = document.createElement("video");
+    probe.preload = "metadata";
+    probe.onloadedmetadata = function () {
+      URL.revokeObjectURL(probe.src);
+      if (isFinite(probe.duration) && probe.duration > Number(form.dataset.maxSeconds)) fail(form.dataset.msgDuration);
+    };
+    probe.src = URL.createObjectURL(file);
+  });
+  form.addEventListener("submit", function (e) {
+    if (blocked) { e.preventDefault(); return; }
+    e.preventDefault();
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", form.action);
+    box.hidden = false;
+    button.disabled = true;
+    xhr.upload.onprogress = function (ev) {
+      if (!ev.lengthComputable) return;
+      var p = Math.round(ev.loaded / ev.total * 100);
+      bar.style.transform = "scaleX(" + (p / 100) + ")";
+      pct.textContent = p + "%";
+    };
+    xhr.onload = function () {
+      // Basarili yuklemede sunucu durum sayfasina yonlendirir; hata sayfalari ayni adreste doner.
+      if (xhr.responseURL && xhr.responseURL.indexOf("/status/") !== -1) { window.location.href = xhr.responseURL; return; }
+      document.open(); document.write(xhr.responseText); document.close();
+    };
+    xhr.onerror = function () { box.hidden = true; fail(form.dataset.msgNetwork); button.disabled = false; blocked = false; };
+    xhr.send(new FormData(form));
+  });
+})();
+</script>
+"""
+
 UPLOAD_FORM = f"""
 <!doctype html>
 <html lang="{{{{ lang }}}}" dir="{{{{ dir }}}}">
@@ -497,9 +559,14 @@ UPLOAD_FORM = f"""
   <div class="splitRow">
     <div class="card rv" id="uploadForm">
       {{% if user %}}
-        <form action="/process" method="post" enctype="multipart/form-data">
+        <form action="/process" method="post" enctype="multipart/form-data" id="uploadFormEl"
+              data-max-bytes="{{{{ max_upload_mb * 1024 * 1024 }}}}" data-max-seconds="{{{{ max_duration }}}}"
+              data-msg-size="{{{{ t.error_size_body.format(max_mb=max_upload_mb) }}}}"
+              data-msg-duration="{{{{ t.error_duration_body.format(max_min=(max_duration / 60)|round|int) }}}}"
+              data-msg-network="{{{{ t.processing_error_body }}}}">
           <label for="video">{{{{ t.label_video }}}}</label>
           <input type="file" id="video" name="video" accept="video/*" required>
+          <p class="uploadError" id="uploadError" role="alert" hidden></p>
           <label for="language">{{{{ t.label_language }}}}</label>
           <select name="language" id="language">
             {{% for value, label in languages %}}
@@ -523,8 +590,14 @@ UPLOAD_FORM = f"""
           </div>
 
           <button type="submit" class="btn btnBlue btnPrimary">{{{{ t.button_process|safe }}}}</button>
+          <div class="uploadProgress" id="uploadProgress" role="status" hidden>
+            <p><span>{{{{ t.uploading }}}}</span><b id="uploadPct">0%</b></p>
+            <div class="working"><i id="uploadBar"></i></div>
+            <p class="formNote">{{{{ t.upload_wait }}}}</p>
+          </div>
           <p class="formNote">{{{{ t.free_note|safe }}}}</p>
         </form>
+        {UPLOAD_JS}
         <script>
           function toggleSubsPreview(cb) {{
             var box = document.getElementById("subsPreviewBox");
@@ -726,9 +799,12 @@ def index():
     lang = resolve_lang()
     t = get_ui_strings(lang)
     direction = "rtl" if lang in RTL_LANGS else "ltr"
+    user = session.get("user")
+    plan = get_user_plan(user["email"]) if user else "free"
     return render_template_string(
-        UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction, user=session.get("user"),
+        UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction, user=user,
         pro_price=PRO_PRICE_TRY, premium_price=PREMIUM_PRICE_TRY,
+        max_upload_mb=MAX_UPLOAD_MB, max_duration=PLAN_LIMITS[plan]["max_duration"],
     )
 
 
@@ -784,7 +860,7 @@ def process():
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_duration_title"],
-            error_body=t["error_duration_body"].format(max_min=limits["max_duration"] / 60),
+            error_body=t["error_duration_body"].format(max_min=round(limits["max_duration"] / 60)),
         )
 
     # Asil isleme (transkript + ceviri + altyazi yakma) arka planda bir thread'de
