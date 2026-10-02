@@ -52,6 +52,10 @@ init_auth(app)
 # Bekleyen isler bu kilidi sirayla alir (gunicorn tek worker ile calistigi surece).
 PROCESS_LOCK = threading.Lock()
 OUTPUT_TTL_SECONDS = 24 * 60 * 60
+# "20 dakika" sinirinda 19:59 gorunen bir video, dosyadaki ses/goruntu izlerinin
+# birkac saniyelik farki yuzunden 20:00'i biraz asabiliyor. Kullaniciyi bunun icin
+# geri cevirmemek adina sure sinirina kucuk bir tolerans ekliyoruz.
+DURATION_GRACE_SECONDS = 15
 
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
@@ -560,7 +564,7 @@ UPLOAD_FORM = f"""
     <div class="card rv" id="uploadForm">
       {{% if user %}}
         <form action="/process" method="post" enctype="multipart/form-data" id="uploadFormEl"
-              data-max-bytes="{{{{ max_upload_mb * 1024 * 1024 }}}}" data-max-seconds="{{{{ max_duration }}}}"
+              data-max-bytes="{{{{ max_upload_mb * 1024 * 1024 }}}}" data-max-seconds="{{{{ max_duration + duration_grace }}}}"
               data-msg-size="{{{{ t.error_size_body.format(max_mb=max_upload_mb) }}}}"
               data-msg-duration="{{{{ t.error_duration_body.format(max_min=(max_duration / 60)|round|int) }}}}"
               data-msg-network="{{{{ t.processing_error_body }}}}">
@@ -805,6 +809,7 @@ def index():
         UPLOAD_FORM, languages=LANGUAGES, t=t, lang=lang, dir=direction, user=user,
         pro_price=PRO_PRICE_TRY, premium_price=PREMIUM_PRICE_TRY,
         max_upload_mb=MAX_UPLOAD_MB, max_duration=PLAN_LIMITS[plan]["max_duration"],
+        duration_grace=DURATION_GRACE_SECONDS,
     )
 
 
@@ -855,7 +860,7 @@ def process():
 
     # Plan kontrolu 2: video suresi sinirin altinda mi?
     duration = get_duration_seconds(video_path)
-    if duration > limits["max_duration"]:
+    if duration > limits["max_duration"] + DURATION_GRACE_SECONDS:
         video_path.unlink()
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
