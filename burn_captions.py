@@ -9,9 +9,11 @@ import sys
 import subprocess
 from pathlib import Path
 
+from video_utils import get_frame_rate
+
 # Altyazi stili: kalin beyaz yazi, siyah kalin kontur, ekranin alt-orta kismi
 CAPTION_STYLE = (
-    "FontName=Arial,"
+    "FontName=Noto Sans,"         # sunucuda kurulu (Dockerfile); eksik harfler Noto CJK'den tamamlanir
     "FontSize=14,"
     "PrimaryColour=&H00FFFFFF,"   # beyaz yazi
     "OutlineColour=&H00000000,"   # siyah kontur
@@ -40,7 +42,12 @@ COVER_BAR_FILTER = "drawbox=x=0:y=ih*0.80:w=iw:h=ih*0.20:color=black@0.92:t=fill
 
 def burn(video_path: Path, srt_path: Path, output_path: Path, cover_subs: bool = False):
     srt_escaped = str(srt_path).replace(":", "\\:")
-    filters = [SCALE_FILTER]
+    filters = []
+    # Telefonlarin 60 kare/sn cektigi videolari 30'a indiriyoruz: sosyal medyada
+    # fark edilmiyor, ama kodlanacak kare sayisi (ve islem suresi) yariya iniyor.
+    if get_frame_rate(video_path) > 31:
+        filters.append("fps=30")
+    filters.append(SCALE_FILTER)
     if cover_subs:
         filters.append(COVER_BAR_FILTER)
     filters.append(f"subtitles={srt_escaped}:force_style='{CAPTION_STYLE}'")

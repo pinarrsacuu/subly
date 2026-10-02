@@ -2,7 +2,12 @@ FROM python:3.11-slim
 
 # Debian'in ffmpeg paketi libass (altyazi render) destegiyle geliyor,
 # Mac'te Homebrew'da yasadigimiz sorun burada olmuyor.
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+# Fontlar: altyazi 14 dile cevrilebiliyor. Noto Core Latin/Kiril/Arapca/Hintce'yi,
+# Noto CJK Cince/Japonca/Korece'yi kapsar. Bunlar olmadan o dillerde altyazi
+# bos kareler olarak cikiyordu (sunucuda o harfleri iceren font yoktu).
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg fontconfig \
+        fonts-noto-core fonts-noto-cjk \
+    && fc-cache -f \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

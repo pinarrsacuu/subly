@@ -820,15 +820,29 @@ def run_job(job_id, file_id, video_path, target_language, cover_subs, email, ip,
         mark_processing(job_id)
         try:
             cleanup_old_outputs()
+            # Her adimin suresini Render loglarina yaziyoruz - yavaslik sikayetinde
+            # zamanin nereye gittigini (ses, transkript, ceviri, kodlama) gormek icin.
+            started = time.time()
+            size_mb = video_path.stat().st_size / (1024 * 1024)
             audio_path = extract_audio(video_path)
+            t_audio = time.time()
             segments = transcribe(audio_path)
+            t_transcribe = time.time()
             if target_language != "original":
                 segments = translate_segments(segments, target_language)
             write_srt(segments, srt_path)
+            t_translate = time.time()
 
             output_filename = f"{file_id}_captioned.mp4"
             output_path = OUTPUT_DIR / output_filename
             burn(video_path, srt_path, output_path, cover_subs=cover_subs)
+            t_burn = time.time()
+            print(
+                f"[job {job_id[:8]}] size={size_mb:.0f}MB audio={t_audio - started:.0f}s "
+                f"transcribe={t_transcribe - t_audio:.0f}s translate={t_translate - t_transcribe:.0f}s "
+                f"burn={t_burn - t_translate:.0f}s total={t_burn - started:.0f}s",
+                flush=True,
+            )
 
             record_usage(email)
             if is_free:
