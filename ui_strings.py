@@ -507,7 +507,7 @@ UI_STRINGS = {
         "label_email": "E-posta adresi",
         "button_process": "İşle &rarr;",
         "badge_ready": "&#10003; Hazır",
-        "result_headline": "Video<em>n</em> hazır.",
+        "result_headline": "Videon <em>hazır</em>.",
         "download": "İndir &darr;",
         "back_link": "Başka video işle &rarr;",
         "error_limit_title": "Bu ayki ücretsiz video hakkını kullandın",

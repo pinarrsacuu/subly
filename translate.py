@@ -4,6 +4,7 @@ Zaman damgalarina dokunmaz, sadece metni cevirir.
 """
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 from dotenv import load_dotenv
@@ -31,31 +32,49 @@ LANGUAGES = [
 ]
 
 
+# Uzun videolarda tum satirlari tek istekte cevirmek hem yavasti (21 dakikalik
+# videoda ~2 dakika) hem de riskliydi: modelin cikti siniri asilirsa JSON yarim
+# gelir ve satirlar cevrilmeden kalir. Satirlari kucuk gruplara bolup gruplari
+# ayni anda (paralel) ceviriyoruz.
+BATCH_SIZE = 40
+MAX_PARALLEL = 6
+
+SYSTEM_PROMPT = (
+    "You are a professional subtitle translator. Translate each line's "
+    "'text' into the target language, keeping meaning and tone natural for "
+    "short-form video captions. Return JSON with the same schema: "
+    '{"lines": [{"i": 0, "text": "..."}, ...]}. Same number of lines, same order.'
+)
+
+
+def _translate_batch(lines, target_language: str) -> dict:
+    """Bir grup satiri cevirir, {satir_no: ceviri} dondurur. Bir kez yeniden dener."""
+    last_error = None
+    for _ in range(2):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": json.dumps({"target_language": target_language, "lines": lines})},
+                ],
+            )
+            data = json.loads(response.choices[0].message.content)
+            return {item["i"]: item["text"] for item in data["lines"]}
+        except Exception as exc:  # ag hatasi, yarim JSON vb.
+            last_error = exc
+    raise last_error
+
+
 def translate_segments(segments, target_language: str):
     lines = [{"i": i, "text": seg.text.strip()} for i, seg in enumerate(segments)]
+    batches = [lines[k:k + BATCH_SIZE] for k in range(0, len(lines), BATCH_SIZE)]
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        response_format={"type": "json_object"},
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a professional subtitle translator. Translate each line's "
-                    "'text' into the target language, keeping meaning and tone natural for "
-                    "short-form video captions. Return JSON with the same schema: "
-                    '{"lines": [{"i": 0, "text": "..."}, ...]}. Same number of lines, same order.'
-                ),
-            },
-            {
-                "role": "user",
-                "content": json.dumps({"target_language": target_language, "lines": lines}),
-            },
-        ],
-    )
-
-    data = json.loads(response.choices[0].message.content)
-    translated_by_index = {item["i"]: item["text"] for item in data["lines"]}
+    translated_by_index = {}
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as pool:
+        for result in pool.map(lambda batch: _translate_batch(batch, target_language), batches):
+            translated_by_index.update(result)
 
     return [
         SimpleNamespace(

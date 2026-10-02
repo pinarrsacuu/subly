@@ -54,12 +54,48 @@ def format_timestamp(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
 
 
+# Cince/Japonca gibi kelime arasi bosluk kullanmayan dillerde altyazi motoru
+# satiri bolecek yer bulamiyor ve tum cumle tek, cok uzun bir satir oluyordu.
+# Bu satirlari kendimiz boluyoruz (tercihen noktalama isaretinden sonra).
+NO_SPACE_LINE_CHARS = 18
+_BREAK_AFTER = "，。、！？；：,.!?;:"
+
+
+def _is_wide(ch: str) -> bool:
+    return "\u3040" <= ch <= "\u30ff" or "\u3400" <= ch <= "\u9fff" or "\uf900" <= ch <= "\ufaff" or "\uff00" <= ch <= "\uffef"
+
+
+def wrap_caption(text: str) -> str:
+    text = text.strip()
+    wide = sum(1 for ch in text if _is_wide(ch))
+    if wide < len(text) * 0.5 or len(text) <= NO_SPACE_LINE_CHARS:
+        return text  # bosluklu diller: altyazi motoru zaten kendisi boluyor
+    lines, current = [], ""
+    for index, ch in enumerate(text):
+        current += ch
+        following = text[index + 1] if index + 1 < len(text) else ""
+        # Latin harfli bir kelimenin (ornegin "Cloud") ortasindan bolme.
+        inside_word = ch.isascii() and ch.isalnum() and following.isascii() and following.isalnum()
+        long_enough = len(current) >= NO_SPACE_LINE_CHARS and not inside_word
+        natural_break = ch in _BREAK_AFTER and len(current) >= NO_SPACE_LINE_CHARS * 0.6
+        if long_enough or natural_break:
+            lines.append(current.strip())
+            current = ""
+    if current.strip():
+        # Tek-iki karakterlik artik satir birakma, oncekine ekle.
+        if lines and len(current.strip()) <= 2:
+            lines[-1] += current.strip()
+        else:
+            lines.append(current.strip())
+    return "\n".join(lines)
+
+
 def write_srt(segments, srt_path: Path):
     with open(srt_path, "w", encoding="utf-8") as f:
         for i, seg in enumerate(segments, start=1):
             start = format_timestamp(seg.start)
             end = format_timestamp(seg.end)
-            f.write(f"{i}\n{start} --> {end}\n{seg.text.strip()}\n\n")
+            f.write(f"{i}\n{start} --> {end}\n{wrap_caption(seg.text)}\n\n")
 
 
 def main():

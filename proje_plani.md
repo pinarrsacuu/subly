@@ -118,3 +118,12 @@ Kullanıcı en basit haliyle bir uygulama geliştirmeye başlamak istiyor — bi
   - 1 GB yükleme sınırı; çıktı sınırı 720p'den 1080p'ye çıktı; çıktılar 24 saat sonra siliniyor.
   - **Dikkat:** yerelde `import app` gerçek veritabanına bağlanır ve `fail_interrupted_jobs()` çalıştırır — yerel testlerde DB fonksiyonlarını sahteleyin (bkz. commit'teki test yaklaşımı).
   - **Sonraki adımlar:** (1) canlıda 1, 5 ve 20 dakikalık gerçek videolarla süre/bellek ölçümü, (2) iyzico onayı gelince ödeme entegrasyonu (önce sitede mesafeli satış/iade/gizlilik/iletişim sayfaları gerekli), (3) Premium (15 video) < Pro (20 video) tutarsızlığına karar, (4) pazarlama.
+- 2026-10-02 (devam): **Canlı testler ve düzeltmeler.**
+  - İlk ölçüm (1080p çıktı): 1 dk video ~5 dk, 5 dk video ~10 dk sürdü → çıktı tekrar **720p**'ye çekildi (tek işlemcide 1080p ~2.6 kat yavaş).
+  - **Çince altyazı kare kare çıkıyordu** (sunucuda font yoktu) → Dockerfile'a Noto Core + Noto CJK eklendi, altyazı fontu "Noto Sans". Canlıda Çince doğrulandı.
+  - Yükleme formuna **ilerleme çubuğu** ve yükleme öncesi tarayıcıda **boyut/süre kontrolü** eklendi; yükleme sınırı 2 GB; süre sınırında 90 sn tolerans.
+  - "Hazır olunca email atacağız" cümlesi 14 dilde kaldırıldı (Resend deneme göndericisiyle başka kullanıcılara mail gittiği doğrulanmadı; alan adı doğrulaması yapılınca geri eklenebilir).
+  - **21 dakikalık gerçek video (674 MB, 1080p HEVC → 720p, Çinceye çeviri) Render Standard'da ölçüldü:** ses 13 sn, transkript 97 sn, çeviri 118 sn, gömme 631 sn, toplam 859 sn (~14 dk). Yani işlem süresi kabaca video süresinin 0.7 katı; asıl yük gömme (video süresinin ~yarısı). Yükleme ayrıca ~10 dk sürdü (sunucu Oregon'da, kullanıcı Türkiye'de).
+  - Bunun üzerine: çeviri 40 satırlık gruplar halinde **paralel** yapılıyor (hız + uzun videoda yarım JSON riski kalktı); Çince/Japonca altyazı satırları elle bölünüyor (boşluksuz dillerde tek uzun satır oluyordu).
+  - **Açık konular:** (1) sunucuyu Avrupa'ya (Frankfurt) taşımak yüklemeyi hızlandırır — Render'da bölge değişmiyor, yeni servis gerekir; (2) gömme süresi ancak daha güçlü sunucuyla (2 CPU, $85/ay) ciddi kısalır; (3) sitedeki "bir dakikadan kısa sürede hazır" vaadi kısa videolar için doğrulanmalı.
+
