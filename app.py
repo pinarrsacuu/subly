@@ -8,6 +8,7 @@ Sonra tarayicidan: http://localhost:5001
 
 import os
 import threading
+import time
 import uuid
 from pathlib import Path
 
@@ -25,7 +26,10 @@ from usage_tracker import (
     init_db, upsert_user, get_user_plan, PLAN_LIMITS, FREE_MONTHLY_LIMIT,
     PRO_PRICE_TRY, PREMIUM_PRICE_TRY,
 )
-from jobs import init_jobs_db, create_job, get_job, mark_processing, mark_done, mark_error
+from jobs import (
+    init_jobs_db, create_job, get_job, mark_processing, mark_done, mark_error,
+    queue_position, count_active_jobs, fail_interrupted_jobs,
+)
 from notify import send_ready_email, send_error_email
 
 app = Flask(__name__)
@@ -34,9 +38,20 @@ app = Flask(__name__)
 # http:// uretip Google'in "redirect_uri_mismatch" hatasina yol aciyordu.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ["SECRET_KEY"]
+# Tek dosya icin ust sinir: daha buyugu sunucunun diskini/bellegini tek basina
+# kilitleyebilir. Flask bunu asan yuklemeyi 413 hatasiyla reddeder (asagida yakalaniyor).
+MAX_UPLOAD_MB = 1024
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 init_db()
 init_jobs_db()
+fail_interrupted_jobs()
 init_auth(app)
+
+# Videolar tek tek islenir: sunucuda tek islemci var, ayni anda birden fazla
+# ffmpeg calisirsa hepsi yavaslar ve bellek tasarsa hepsi birden cokerdi.
+# Bekleyen isler bu kilidi sirayla alir (gunicorn tek worker ile calistigi surece).
+PROCESS_LOCK = threading.Lock()
+OUTPUT_TTL_SECONDS = 24 * 60 * 60
 
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
@@ -638,9 +653,9 @@ STATUS_PAGE = f"""
 <div class="wrap">
   {NAV}
   <div class="card">
-    <span class="badge">{{{{ t.processing_badge|safe }}}}</span>
-    <h1 class="headline">{{{{ t.processing_title|safe }}}}</h1>
-    <p class="lede">{{{{ t.processing_body }}}}</p>
+    <span class="badge">{{{{ status_badge|safe }}}}</span>
+    <h1 class="headline">{{{{ status_title|safe }}}}</h1>
+    <p class="lede">{{{{ status_body }}}}</p>
     <div class="working" aria-hidden="true"><i></i></div>
   </div>
   <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
@@ -739,7 +754,9 @@ def process():
 
     # Plan kontrolu 1: bu ay hakki kalmis mi? Dosyayi kaydetmeden once
     # bakiyoruz ki API maliyetine hic girmeyelim.
-    if get_remaining(email, limits["monthly_limit"]) <= 0:
+    # Bitmemis isler de hakka sayilir - yoksa ayni anda 10 video yukleyip limiti asabilirdi.
+    active = count_active_jobs(email)
+    if get_remaining(email, limits["monthly_limit"]) - active <= 0:
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_limit_title"],
@@ -750,7 +767,7 @@ def process():
     # hesaplariyla (email degistirerek) limiti asma girisimini zorlastirmak
     # icin ayrica IP bazli da sayiyoruz. Odeme yapan kullanicilar (pro/premium)
     # bundan etkilenmiyor.
-    if is_free and get_ip_remaining(ip, FREE_MONTHLY_LIMIT) <= 0:
+    if is_free and get_ip_remaining(ip, FREE_MONTHLY_LIMIT) - active <= 0:
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
             error_title=t["error_limit_title"],
@@ -785,31 +802,62 @@ def process():
     return redirect(url_for("job_status", job_id=job_id))
 
 
+def cleanup_old_outputs():
+    """Indirilmis/unutulmus eski cikti videolarini siler - disk dolmasin."""
+    cutoff = time.time() - OUTPUT_TTL_SECONDS
+    for path in OUTPUT_DIR.glob("*"):
+        try:
+            if path.is_file() and path.stat().st_mtime < cutoff:
+                path.unlink()
+        except OSError:
+            pass
+
+
 def run_job(job_id, file_id, video_path, target_language, cover_subs, email, ip, is_free, status_url, t):
-    mark_processing(job_id)
-    try:
-        audio_path = extract_audio(video_path)
-        segments = transcribe(audio_path)
-        if target_language != "original":
-            segments = translate_segments(segments, target_language)
-        srt_path = video_path.with_suffix(".srt")
-        write_srt(segments, srt_path)
-        audio_path.unlink()
+    srt_path = video_path.with_suffix(".srt")
+    audio_path = None
+    with PROCESS_LOCK:
+        mark_processing(job_id)
+        try:
+            cleanup_old_outputs()
+            audio_path = extract_audio(video_path)
+            segments = transcribe(audio_path)
+            if target_language != "original":
+                segments = translate_segments(segments, target_language)
+            write_srt(segments, srt_path)
 
-        output_filename = f"{file_id}_captioned.mp4"
-        output_path = OUTPUT_DIR / output_filename
-        burn(video_path, srt_path, output_path, cover_subs=cover_subs)
-        video_path.unlink()
-        srt_path.unlink()
+            output_filename = f"{file_id}_captioned.mp4"
+            output_path = OUTPUT_DIR / output_filename
+            burn(video_path, srt_path, output_path, cover_subs=cover_subs)
 
-        record_usage(email)
-        if is_free:
-            record_ip_usage(ip)
-        mark_done(job_id, output_filename)
-        send_ready_email(email, status_url)
-    except Exception as exc:
-        mark_error(job_id, t["processing_error_title"], f'{t["processing_error_body"]} ({exc})')
-        send_error_email(email, status_url)
+            record_usage(email)
+            if is_free:
+                record_ip_usage(ip)
+            mark_done(job_id, output_filename)
+            send_ready_email(email, status_url)
+        except Exception as exc:
+            mark_error(job_id, t["processing_error_title"], f'{t["processing_error_body"]} ({exc})')
+            send_error_email(email, status_url)
+        finally:
+            # Basarili da olsa hata da olsa yuklenen video ve ara dosyalar silinir.
+            for path in (video_path, srt_path, audio_path):
+                try:
+                    if path is not None and Path(path).exists():
+                        Path(path).unlink()
+                except OSError:
+                    pass
+
+
+@app.errorhandler(413)
+def upload_too_large(_error):
+    lang = resolve_lang()
+    t = get_ui_strings(lang)
+    direction = "rtl" if lang in RTL_LANGS else "ltr"
+    return render_template_string(
+        ERROR_PAGE, t=t, lang=lang, dir=direction, user=session.get("user"),
+        error_title=t["error_size_title"],
+        error_body=t["error_size_body"].format(max_mb=MAX_UPLOAD_MB),
+    ), 413
 
 
 @app.route("/status/<job_id>")
@@ -830,9 +878,22 @@ def job_status(job_id):
     if job["status"] == "error":
         return render_template_string(
             ERROR_PAGE, t=t, lang=lang, dir=direction, user=user,
-            error_title=job["error_title"], error_body=job["error_body"],
+            # Sunucu yeniden basladigi icin yarida kalan islerde metin bos gelir.
+            error_title=job["error_title"] or t["processing_error_title"],
+            error_body=job["error_body"] or t["processing_error_body"],
         )
-    return render_template_string(STATUS_PAGE, t=t, lang=lang, dir=direction, user=user)
+    if job["status"] == "queued":
+        ahead = queue_position(job_id)
+        return render_template_string(
+            STATUS_PAGE, t=t, lang=lang, dir=direction, user=user,
+            status_badge=t["queued_badge"], status_title=t["queued_title"],
+            status_body=t["queued_body"].format(ahead=ahead),
+        )
+    return render_template_string(
+        STATUS_PAGE, t=t, lang=lang, dir=direction, user=user,
+        status_badge=t["processing_badge"], status_title=t["processing_title"],
+        status_body=t["processing_body"],
+    )
 
 
 @app.route("/outputs/<path:filename>")

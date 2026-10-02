@@ -64,6 +64,48 @@ def get_job(job_id: str) -> Optional[dict]:
     }
 
 
+def queue_position(job_id: str) -> int:
+    """Bu isin onunde kac is var (sirada bekleyen + su an islenen)."""
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT count(*) FROM jobs
+                WHERE status IN ('queued', 'processing')
+                  AND created_at < (SELECT created_at FROM jobs WHERE id = %s)
+                """,
+                (job_id,),
+            )
+            return cur.fetchone()[0]
+
+
+def count_active_jobs(email: str) -> int:
+    """Kullanicinin henuz bitmemis (sirada/isleniyor) is sayisi. Kullanim sayaci ancak
+    is bitince arttigi icin, ayni anda cok video yukleyip aylik limiti asmayi onler."""
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT count(*) FROM jobs WHERE email = %s AND status IN ('queued', 'processing')",
+                (email.lower(),),
+            )
+            return cur.fetchone()[0]
+
+
+def fail_interrupted_jobs() -> int:
+    """Sunucu yeniden basladiginda (deploy, cokme) yarida kalan isler bir daha
+    devam edemez - thread'leri oldu. Bunlari hataya ceviriyoruz ki kullanici
+    sonsuza kadar "isleniyor" sayfasinda beklemesin. Hata metni bos birakilir,
+    durum sayfasi kullanicinin kendi dilindeki genel mesaji gosterir."""
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE jobs SET status = 'error', updated_at = now() WHERE status IN ('queued', 'processing')"
+            )
+            count = cur.rowcount
+        conn.commit()
+    return count
+
+
 def mark_processing(job_id: str) -> None:
     _update(job_id, status="processing")
 

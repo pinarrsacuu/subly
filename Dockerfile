@@ -17,4 +17,6 @@ RUN mkdir -p uploads outputs
 ENV PORT=8080
 EXPOSE 8080
 
-CMD gunicorn --bind 0.0.0.0:$PORT --timeout 300 app:app
+# Tek worker sart: video sirasi (PROCESS_LOCK) ayni surecin icinde tutuluyor.
+# Thread'ler, biri video yuklerken diger ziyaretcilerin sayfayi acabilmesini saglar.
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --worker-class gthread --threads 8 --timeout 600 app:app

@@ -22,12 +22,12 @@ CAPTION_STYLE = (
     "MarginV=60"
 )
 
-# Render Starter'in 512MB RAM'i, 1080p+ bir videoyu ffmpeg ile kodlarken bellek
-# tasmasina (OOM) ve sunucu cokmesine yol aciyordu. Uzun kenari 720p'ye
-# indirerek bellek/CPU kullanimini ciddi sekilde azaltiyoruz - kucuk (720p ve
-# alti) videolar zaten degismeden kaliyor (min(1280, ...) sayesinde buyutme yok).
+# Uzun kenari 1080p ile sinirliyoruz: sosyal medya videolari icin yeterli, ve 4K
+# bir videoyu tek islemcide kodlamak hem cok yavas hem de bellegi zorluyor.
+# 1080p ve alti videolar degismeden kaliyor (min(1920, ...) sayesinde buyutme yok).
+# (Render Starter/512MB doneminde bu sinir 720p idi; Standard/2GB'a gecince yukseltildi.)
 SCALE_FILTER = (
-    "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'"
+    "scale='if(gt(iw,ih),min(1920,iw),-2)':'if(gt(iw,ih),-2,min(1920,ih))'"
 )
 
 # Kullanici "videoda zaten yakilmis altyazi var, ustunu kapat" secenegini
@@ -53,8 +53,8 @@ def burn(video_path: Path, srt_path: Path, output_path: Path, cover_subs: bool =
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-crf", "23",
-            # Tek thread: coklu thread her biri kendi frame tamponunu tuttugu icin
-            # 512MB'lik dar bellekte encode hizindan bellekten tasarrufu tercih ediyoruz.
+            # Sunucuda tek islemci cekirdegi var; fazla thread hiz kazandirmaz,
+            # sadece bellek harcar.
             "-threads", "1",
             # "-c:a copy" orijinal ses akisini oldugu gibi kopyaliyordu; eger
             # telefon kaydi gibi degisken kare hizli (VFR) bir video geldiyse,
