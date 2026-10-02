@@ -132,3 +132,12 @@ Kullanıcı en basit haliyle bir uygulama geliştirmeye başlamak istiyor — bi
 - Ölçüm (Render Standard, 720p, çevirili): 42 MB kısa video 76 sn (ses 1, yazıya dökme 9, çeviri 12, gömme 54).
 - "Bir dakikadan kısa sürede" cümlesi 14 dilde "bir iki dakikada" oldu (step3_desc, faq_a4).
 - Ana başlıktaki "saniyeler içinde" 14 dilde "dakikalar içinde" oldu.
+
+### 2026-10-02 — Yasal sayfalar (iyzico başvurusu için)
+- `legal.py` eklendi: `/yasal/mesafeli-satis`, `/yasal/iptal-iade`, `/yasal/gizlilik`, `/yasal/iletisim`. Metinler yalnızca Türkçe.
+- Her sayfanın alt bilgisinde bu dört sayfaya bağlantı var (`FOOT` sabiti, app.py).
+- Satıcı adı kullanıcının isteğiyle "Nexi Digital"; şahıs adı yazılmadı. iyzico vergi levhasındaki adı isterse `legal.py` içindeki `SELLER` güncellenir.
+- İade kuralı: ödemeden sonraki 3 gün içinde, hiç video işlenmediyse tam iade.
+- Açık konu: vergi levhasındaki faaliyet kodu gayrimenkul aracılık (683101); yazılım satışı için mali müşavire sorulacak.
+- Açık konu: iyzico logosu alt bilgiye ödeme entegrasyonuyla eklenecek. Metinler hukukçu tarafından okunmadı.
+- Ölçüm: 175 MB video 211 sn (ses 3, yazıya dökme 20, çeviri 18, gömme 168).

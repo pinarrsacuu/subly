@@ -12,7 +12,7 @@ import time
 import uuid
 from pathlib import Path
 
-from flask import Flask, request, render_template_string, send_from_directory, session, redirect, url_for
+from flask import Flask, request, render_template_string, send_from_directory, session, redirect, url_for, abort
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth import oauth, init_auth
@@ -31,6 +31,7 @@ from jobs import (
     queue_position, count_active_jobs, fail_interrupted_jobs,
 )
 from notify import send_ready_email, send_error_email
+from legal import legal_links, get_legal_page, UPDATED as LEGAL_UPDATED
 
 app = Flask(__name__)
 # Render/Cloudflare HTTPS'i sonlandirip Flask'a duz HTTP olarak iletiyor - bu
@@ -292,6 +293,20 @@ BRAND_HEAD = """
   footer.siteFoot { margin-top: 128px; border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 0.9rem; color: var(--ink-soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
   footer.siteFoot a { color: var(--ink); font-weight: 600; text-decoration: none; }
   footer.siteFoot a:hover { color: var(--blue-text); }
+  .footLinks { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+
+  /* ---------- Legal pages ---------- */
+  .legal h2 { font-family: var(--body, inherit); font-size: 1.12rem; font-weight: 700; letter-spacing: 0; margin: 32px 0 8px; }
+  .legal p, .legal li { color: var(--ink-soft); max-width: 68ch; }
+  .legal p { margin: 0 0 12px; }
+  .legal ul { margin: 0 0 12px; padding-inline-start: 20px; }
+  .legal li { margin-bottom: 6px; }
+  .legal strong { color: var(--ink); }
+  .legal a { color: var(--blue-text); }
+  .legal dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 0 0 16px; }
+  .legal dt { color: var(--ink-soft); }
+  .legal dd { margin: 0; color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+  .legalMeta { font-size: 0.9rem; color: var(--ink-soft); }
 
   /* ---------- Result / status / error pages ---------- */
   .page .card { margin-top: 32px; }
@@ -389,6 +404,9 @@ NAV = f"""
   {{% endif %}}
 </nav>
 """
+
+# Plain string: the Jinja braces stay as they are when FOOT is dropped into the f-string templates.
+FOOT = """<footer class="siteFoot"><span>{{ t.footer }}</span><span class="footLinks">{% for slug, label in legal_links %}<a href="/yasal/{{ slug }}">{{ label }}</a>{% endfor %}<a href="https://nexidigitalai.com/">nexidigitalai.com</a></span></footer>"""
 
 # The 14 caption languages, each written in its own script.
 TICKER_LANGS = ["English", "Español", "Português", "Français", "Deutsch", "Italiano", "Türkçe",
@@ -687,7 +705,7 @@ UPLOAD_FORM = f"""
     </div>
   </section>
 
-  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
+  {FOOT}
 </div>
 </body>
 </html>
@@ -711,7 +729,7 @@ RESULT_PAGE = f"""
     <a href="/outputs/{{{{ filename }}}}" download class="btn btnBlue btnPrimary">{{{{ t.download|safe }}}}</a>
     <p style="margin-top: 22px"><a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a></p>
   </div>
-  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
+  {FOOT}
 </div>
 </body>
 </html>
@@ -735,7 +753,29 @@ STATUS_PAGE = f"""
     <p class="lede">{{{{ status_body }}}}</p>
     <div class="working" aria-hidden="true"><i></i></div>
   </div>
-  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
+  {FOOT}
+</div>
+</body>
+</html>
+"""
+
+LEGAL_PAGE = f"""
+<!doctype html>
+<html lang="tr" dir="ltr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{{{ title }}}} | Subly</title>
+  {BRAND_HEAD}
+</head>
+<body class="page">
+<div class="wrap">
+  {NAV}
+  <article class="card legal">
+    <h1 class="headline">{{{{ title }}}}</h1>
+    <p class="legalMeta">Son güncelleme: {{{{ updated }}}}</p>
+    {{{{ body|safe }}}}
+  </article>
+  {FOOT}
 </div>
 </body>
 </html>
@@ -757,7 +797,7 @@ ERROR_PAGE = f"""
     <p class="lede">{{{{ error_body }}}}</p>
     <p style="margin-top: 22px"><a href="/" class="btnGhost">{{{{ t.back_link|safe }}}}</a></p>
   </div>
-  <footer class="siteFoot"><span>{{{{ t.footer }}}}</span><a href="https://nexidigitalai.com/">nexidigitalai.com</a></footer>
+  {FOOT}
 </div>
 </body>
 </html>
@@ -810,6 +850,24 @@ def index():
         pro_price=PRO_PRICE_TRY, premium_price=PREMIUM_PRICE_TRY,
         max_upload_mb=MAX_UPLOAD_MB, max_duration=PLAN_LIMITS[plan]["max_duration"],
         duration_grace=DURATION_GRACE_SECONDS,
+    )
+
+
+@app.context_processor
+def inject_legal_links():
+    return {"legal_links": legal_links(session.get("lang", "en"))}
+
+
+@app.route("/yasal/<slug>")
+def legal_page(slug):
+    page = get_legal_page(slug)
+    if page is None:
+        abort(404)
+    title, body = page
+    # Yasal metinler Turkce oldugu icin menu ve alt bilgi de Turkce gosterilir.
+    return render_template_string(
+        LEGAL_PAGE, t=get_ui_strings("tr"), user=session.get("user"),
+        title=title, body=body, updated=LEGAL_UPDATED, legal_links=legal_links("tr"),
     )
 
 
